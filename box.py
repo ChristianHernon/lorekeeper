@@ -63,16 +63,18 @@ class Box:
         self.f_ans = ('Segoe UI', 12)
         self.c = tk.Canvas(self.root, bg=self.bg, highlightthickness=0, bd=0)
         self.c.pack()
-        self.root.bind('<Button-1>', self._copy)
+        self.root.bind('<Button-1>', self._click)
         self.seconds, self.q, self.hide_at, self.blink_at = seconds, queue.Queue(), None, None
         self.question = self.answer = ''
         self.title = False
+        self.action, self.hint = None, ''   # a click runs action (labelled hint) instead of copying
         self.root.after(50, self._pump)
 
     # any thread
-    def show(self, question='', answer='', stay=False, title=False):
-        """title: the first line is Lorekeeper's own heading ("Lorekeeper is ready"), not something the player said."""
-        self.q.put((question, answer, stay, title))
+    def show(self, question='', answer='', stay=False, title=False, on_click=None, hint=''):
+        """title: the first line is Lorekeeper's own heading ("Lorekeeper is ready"), not something the player said.
+        on_click: what clicking the box does instead of copying the answer (hint: its label, e.g. 'CLICK TO UPDATE')."""
+        self.q.put((question, answer, stay, title, on_click, hint))
 
     def hide(self):
         self.q.put(None)
@@ -85,7 +87,7 @@ class Box:
                 if item is None:
                     self._withdraw()
                     continue
-                question, answer, stay, title = item
+                question, answer, stay, title, self.action, self.hint = item
                 if question:
                     self.question, self.title = question, title
                 self.answer = answer
@@ -126,7 +128,8 @@ class Box:
         self._pixels(('..x..', '.xxx.', 'xxxxx', '.xxx.', '..x..'), x0 + PAD, y, 2, {'x': LILAC})   # the page's ◆
         c.create_text(x0 + PAD + 16, y + 1, text='LOREKEEPER', font=self.f_head, fill=LILAC, anchor='nw')
         if done:
-            c.create_text(x0 + iw - PAD, y + 5, text='CLICK TO COPY', font=self.f_tag, fill=LILAC, anchor='e')
+            c.create_text(x0 + iw - PAD, y + 5, text=self.hint if self.action else 'CLICK TO COPY', font=self.f_tag,
+                          fill=GOLD if self.action else LILAC, anchor='e')
         y += 10 + 12
         rule_y = y
         y += PX + 14
@@ -181,7 +184,11 @@ class Box:
         bw, bh = self.root.winfo_reqwidth(), self.root.winfo_reqheight()
         self.root.geometry(f'+{x + w - bw - 24}+{y + h - bh - 24}')
 
-    def _copy(self, _):
+    def _click(self, _):
+        action, self.action = self.action, None
+        if action:
+            self._withdraw()
+            return action()
         self.root.clipboard_clear()
         self.root.clipboard_append(self.answer)
         self._withdraw()

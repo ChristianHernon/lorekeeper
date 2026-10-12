@@ -499,8 +499,11 @@ def tray(app, box):
         def run():
             box.show('Updates', 'Checking…', title=True)
             found = app.updater.check()
-            box.show('Updates', f'Lorekeeper {found[0]} is out: tray → Update to {found[0]}.' if found
-                     else f'You have the latest Lorekeeper ({telemetry.VERSION}).', title=True)
+            if found:
+                box.show('Updates', f'Lorekeeper {found[0]} is out. Click here to update (your notes and settings stay).',
+                         title=True, on_click=lambda: app.updater.update(box), hint='CLICK TO UPDATE')
+            else:
+                box.show('Updates', f'You have the latest Lorekeeper ({telemetry.VERSION}).', title=True)
         threading.Thread(target=run, daemon=True).start()
 
     def status():
@@ -617,7 +620,8 @@ def main():
     threading.Thread(target=lk.run, daemon=True).start()
     tray(app, b)
     app.updater = updater.Updater(telemetry.VERSION, app.cfg, lambda v: b.show(
-        'Update available', f'Lorekeeper {v} is out. Tray → Update to {v} (your notes and settings stay).', title=True))
+        'Update available', f'Lorekeeper {v} is out. Click here to update, or later from the tray (your notes and settings stay).',
+        title=True, on_click=lambda: app.updater.update(b), hint='CLICK TO UPDATE'))
     app.updater.start()
     b.show('Lorekeeper is ready', f"Hold {hotkey.pretty(hk.combo)} in a game and ask." + (f" Playing {app.game['name']}." if app.game else ''), title=True)
     if telemetry.should_ask(app.cfg):   # first run: ask once; nothing is sent before a yes
