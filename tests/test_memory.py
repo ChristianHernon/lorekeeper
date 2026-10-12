@@ -49,3 +49,21 @@ def test_relevant_keeps_the_asked_section():
     out = lookup.relevant(page, 'I found the Botchling under the house, what should I do with it?')
     assert out.startswith(lead.strip()[:20]) and 'lift the curse' in out and len(out) <= 5000
     assert lookup.relevant('short page', 'anything') == 'short page'
+
+
+def test_words_keep_names_whole():
+    import lookup
+    assert lookup.words("Magus's Castle") == {'magus', 'castle'}
+    assert 'magus' in lookup.words('after Magus castle') and 'boss' in lookup.words('the bosses boss')
+
+
+def test_own_guides_finds_the_part_asked_about():
+    import lookup
+    d = tempfile.mkdtemp()
+    g = os.path.join(d, 'chrono-trigger', 'guides')
+    os.makedirs(g)
+    faq = '== Intro ==\n' + 'Welcome to my FAQ. ' * 200 + "\n== Magus's Castle ==\nUse the Masamune on Magus's barrier.\n" + '== Ending ==\n' + 'Credits. ' * 300
+    open(os.path.join(g, 'faq.txt'), 'w').write(faq)
+    out = lookup.own_guides("how do I get through Magus's castle", 'Chrono Trigger', d)
+    assert out.startswith('Source: your guide faq.txt') and 'Masamune' in out
+    assert lookup.own_guides('anything', 'Other Game', d) == ''

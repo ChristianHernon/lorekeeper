@@ -259,7 +259,7 @@ class App:
             self.voice.say("I couldn't see the screen, so going by your words.")
         now = time.time()
         self.turns = [t for t in self.turns if now - t['t'] < TURN_SECS][-3:]
-        wiki = '' if shots or saved or kit else lookup.wiki(q, self.game and self.game['name'])   # a screenshot names the thing; the model searches then
+        wiki = '' if shots or saved or kit else lookup.wiki(q, self.game and self.game['name'], folder=notes.FOLDER)   # a screenshot names the thing; the model searches then
         text = brain.request(q, self.game, notes.read(self.game), self.turns, wiki, kit)
         spoken = []
 
@@ -411,7 +411,7 @@ def main():
         if not p:
             return print('Claude Code not found')
         t = time.time()
-        wiki = lookup.wiki(q, g and g['name'])
+        wiki = lookup.wiki(q, g and g['name'], folder=notes.FOLDER)
         print(f'(wiki {len(wiki)} chars in {time.time() - t:.1f}s)')
         a, usd = brain.ask(p, brain.request(q, g, notes.read(g), [], wiki, gear.text(g) if gear.wants(q) else ''))
         a, learned = brain.split_note(a)

@@ -128,7 +128,8 @@ Everything per game is a plain file you can edit, in `%APPDATA%\Lorekeeper\games
 - **Game running as admin?** Windows keeps its keys from non-admin apps, so run Lorekeeper as admin too.
 - **Exclusive fullscreen** covers the box on that screen, but the voice still works. If a game shows black to screen capture, Lorekeeper says so and goes by your words.
 - **Anti-cheat:** Lorekeeper reads the screen the way Discord and OBS do, and watches one hotkey like push-to-talk. It never touches the game's memory or files. "Clip it" sends one key press, to Steam.
-- **Wikis:** each game's own wiki is searched directly (wiki.gg, Fandom, bg3.wiki and more). New games get their wiki found and remembered on first use.
+- **Wikis and walkthroughs:** each game's own wiki is searched directly (wiki.gg, Fandom, bg3.wiki and more), and new games get their wiki found and remembered on first use. For "where do I go" and "how do I beat" questions, the matching chapter of the game's [StrategyWiki](https://strategywiki.org) walkthrough comes along too. That's ideal for older games.
+- **Your own guides:** drop any text FAQ (`.txt` or `.md`) into `%APPDATA%\Lorekeeper\games\<game>\guides\`, and Lorekeeper searches it for the part you're asking about.
 </details>
 
 <details>

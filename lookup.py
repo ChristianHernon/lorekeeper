@@ -8,7 +8,7 @@ UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 WIKIS = ('bg3.wiki', 'wiki.gg', 'fandom.com', 'fextralife.com', 'game8.co', 'wikia', 'wiki')   # earlier = preferred
 # MediaWiki sites whose page source we can fetch (infoboxes keep quotes and stats): host pattern -> api.php path
 APIS = {r'[^/]+\.wiki\.gg': '/api.php', r'[^/]+\.fandom\.com': '/api.php', r'bg3\.wiki': '/w/api.php', r'www\.poe2wiki\.net': '/api.php',
-        r'stardewvalleywiki\.com': '/mediawiki/api.php'}
+        r'stardewvalleywiki\.com': '/mediawiki/api.php', r'strategywiki\.org': '/w/api.php'}
 MEDIAWIKI = re.compile(r'^https?://(' + '|'.join(APIS) + r')/wiki/([^?#]+)')
 
 
@@ -46,7 +46,8 @@ def words(text):
     out = set()
     for w in re.findall(r"[a-z][a-z']{3,}", text.lower()):
         if not re.fullmatch(STOP, w) and not re.fullmatch(GENERIC, w):
-            out.add(re.sub(r"(?:'s|ing|ed|es|s)$", '', w))
+            w = re.sub(r"'s?$", '', w)
+            out.add(w if re.search(r'(?:us|ss|is)$', w) else re.sub(r'(?:ing|ed|es|s)$', '', w))
     return out
 
 
@@ -202,7 +203,63 @@ def query(question, game):
     return f"{game} wiki {' '.join(q.split())}" if game else ' '.join(q.split())
 
 
-def wiki(question, game, pages=2):
+GUIDE_WORDS = re.compile(r"\b(where|next|how do i|how to|get to|find|reach|beat|defeat|solve|puzzle|stuck|walkthrough|guide|"
+                         r"what do i|go now|open|unlock|key|door|switch|dungeon|level|chapter|area|boss|route|path)\b", re.I)
+GUIDES = 'guides'   # <notes folder>/<game>/guides/*.txt: the player's own saved FAQs
+
+
+VERBS = {'beat', 'defeat', 'kill', 'get', 'reach', 'find', 'after', 'before', 'into', 'past', 'next', 'now', 'there', 'here', 'go',
+         'going', 'stuck', 'solve', 'open', 'unlock', 'need', 'want', 'have', 'from', 'with', 'then', 'walkthrough', 'guide'}
+_sw_pages, _sw_text = {}, {}
+
+
+def strategywiki(question, game):
+    """The game's StrategyWiki walkthrough page for this question ('<Game>/<Area>'), or ''. Text guides for thousands of games.
+    Its own search wants every word on the page, so: the game's page titles first, then its key nouns within the game."""
+    api = 'https://strategywiki.org/w/api.php?format=json&action=query'
+    nouns = {w for w in words(question) if w not in VERBS}
+    if not nouns:
+        return ''
+    if game not in _sw_pages:
+        j = json.loads(get(api + '&list=allpages&aplimit=500&apprefix=' + urllib.parse.quote(game + '/'), timeout=4))
+        _sw_pages[game] = [p['title'] for p in j.get('query', {}).get('allpages', [])]
+    url = lambda t: 'https://strategywiki.org/wiki/' + urllib.parse.quote(t.replace(' ', '_'))
+    best = max(_sw_pages[game], key=lambda t: len(nouns & words(t.split('/', 1)[1])), default='')
+    if best and nouns & words(best.split('/', 1)[1]):
+        return url(best)
+    if not _sw_pages[game]:
+        return ''   # StrategyWiki has no guide for this game (or a different title for it)
+    # its search doesn't index page text well: load the game's pages once (batched, cached) and look for the nouns
+    if game not in _sw_text:
+        _sw_text[game] = {}
+        titles = _sw_pages[game][:150]
+        for i in range(0, len(titles), 50):
+            j = json.loads(get(api + '&prop=revisions&rvprop=content&rvslots=main&titles=' + urllib.parse.quote('|'.join(titles[i:i + 50])), timeout=8))
+            for pg in j.get('query', {}).get('pages', {}).values():
+                rev = (pg.get('revisions') or [{}])[0]
+                _sw_text[game][pg['title']] = (rev.get('slots', {}).get('main', {}).get('*') or rev.get('*') or '').lower()
+    score = lambda t: sum(_sw_text[game][t].count(n) for n in nouns)
+    hit = max(_sw_text[game], key=score, default='')
+    return url(hit) if hit and score(hit) else ''
+
+
+def own_guides(question, game, folder, most=4000):
+    """The best-matching parts of text guides the player saved for this game -> 'Source: …' block or ''."""
+    d = os.path.join(folder, re.sub(r'[^a-z0-9]+', '-', game.lower()).strip('-'), GUIDES)
+    if not os.path.isdir(d):
+        return ''
+    out = []
+    for f in sorted(os.listdir(d)):
+        if f.lower().endswith(('.txt', '.md')):
+            try:
+                text = open(os.path.join(d, f), encoding='utf-8', errors='replace').read()
+            except OSError:
+                continue
+            out.append(f'Source: your guide {f}\n' + relevant(text, question, most // max(1, len(out) + 1)))
+    return '\n\n'.join(out[:2])
+
+
+def wiki(question, game, pages=2, folder=''):
     """'Source: <url>\n<text>' blocks for the prompt, or '' when the search finds nothing (the model searches itself)."""
     urls = []
     host = host_for(game) if game else ''
@@ -219,8 +276,17 @@ def wiki(question, game, pages=2):
         if game and not host and found:
             host_for(game, found)   # learn the wiki for next time
         urls = rank(found)[:pages]
+    guide = ''
+    if game and GUIDE_WORDS.search(question):   # "where do I go", "how do I beat": a walkthrough says it best
+        try:
+            guide = strategywiki(question, game)
+        except Exception:
+            guide = ''
+        if guide and guide not in urls:
+            urls = urls[:pages] + [guide]
+    mine = own_guides(question, game, folder) if game and folder else ''
     if not urls:
-        return ''
-    with ThreadPoolExecutor(pages or 1) as ex:
+        return mine
+    with ThreadPoolExecutor(len(urls)) as ex:
         texts = list(ex.map(lambda u: page(u, question), urls))
-    return '\n\n'.join(f'Source: {u}\n{t}' for u, t in zip(urls, texts) if t)
+    return '\n\n'.join([f'Source: {u}\n{t}' for u, t in zip(urls, texts) if t] + ([mine] if mine else []))
