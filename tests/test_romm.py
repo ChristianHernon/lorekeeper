@@ -27,3 +27,9 @@ def test_emulator_without_romm_names_the_game():
 def test_platform_in_prompt():
     r = brain.request('how do I beat Kraid', {'name': 'Super Metroid', 'id': '12', 'source': 'romm', 'platform': 'Super Nintendo'}, '', [])
     assert r.startswith('Game: Super Metroid (Super Nintendo)')
+
+
+def test_update_versions():
+    import updater
+    assert updater.newer('0.1.10', '0.1.9') and updater.newer('v0.2.0', '0.1.3') and updater.newer('1.0.0', '0.9.99')
+    assert not updater.newer('0.1.3', '0.1.3') and not updater.newer('0.1.2', '0.1.3') and not updater.newer('garbage', '0.1.3')

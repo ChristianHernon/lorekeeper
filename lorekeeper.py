@@ -26,7 +26,7 @@ if FROZEN:
     os.makedirs(_logdir, exist_ok=True)
     sys.stdout = sys.stderr = open(os.path.join(_logdir, 'app.log'), 'a', encoding='utf-8', buffering=1)
     print(f"--- {__import__('time').strftime('%Y-%m-%d %H:%M:%S')} Lorekeeper starting", flush=True)
-import brain, capture, commands, config, games, gear, listen, lookup, notes, romm, voice  # noqa: E402
+import brain, capture, commands, config, games, gear, listen, lookup, notes, romm, telemetry, updater, voice  # noqa: E402
 
 LOG = os.path.join(config.DIR, 'log.jsonl')
 TURN_SECS = 600
@@ -469,7 +469,8 @@ def tray(app, box):
         os.startfile(notes.path(app.game))
 
     def items():
-        return [
+        up = getattr(app, 'updater', None) and app.updater.available
+        return ([Item(f'Update to {up[0]}', action=lambda: app.updater.update(box), note='new')] if up else []) + [
             Item('GAME', header=True),
             Item('Pick the game', sub=games_page),
             Item("This game's notes", action=notes_open, enabled=lambda: bool(app.game)),
@@ -489,8 +490,17 @@ def tray(app, box):
             Item('Share anonymous usage counts', action=flip('telemetry'), check=lambda: app.cfg['telemetry'] is True),
             Item('Settings file', action=lambda: (config.save(app.cfg), os.startfile(config.FILE))),
             Item('Ask log', action=lambda: os.path.exists(LOG) and os.startfile(LOG)),
+            Item('Check for updates', action=check_now, note=telemetry.VERSION),
             Item('Quit', action=lambda: quit_(icon, None)),
         ]
+
+    def check_now():
+        def run():
+            box.show('Updates', 'Checking…', title=True)
+            found = app.updater.check()
+            box.show('Updates', f'Lorekeeper {found[0]} is out: tray → Update to {found[0]}.' if found
+                     else f'You have the latest Lorekeeper ({telemetry.VERSION}).', title=True)
+        threading.Thread(target=run, daemon=True).start()
 
     def status():
         playing = f"Playing: {app.game['name']}" if app.game else 'No game in front'
@@ -605,7 +615,9 @@ def main():
     app.lk = lk
     threading.Thread(target=lk.run, daemon=True).start()
     tray(app, b)
-    import telemetry
+    app.updater = updater.Updater(telemetry.VERSION, app.cfg, lambda v: b.show(
+        'Update available', f'Lorekeeper {v} is out. Tray → Update to {v} (your notes and settings stay).', title=True))
+    app.updater.start()
     b.show('Lorekeeper is ready', f"Hold {hotkey.pretty(hk.combo)} in a game and ask." + (f" Playing {app.game['name']}." if app.game else ''), title=True)
     if telemetry.should_ask(app.cfg):   # first run: ask once; nothing is sent before a yes
         def ask():

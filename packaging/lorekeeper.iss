@@ -55,6 +55,8 @@ Name: "{userstartup}\Lorekeeper"; Filename: "{app}\Lorekeeper.exe"; Tasks: start
 
 [Run]
 Filename: "{app}\Lorekeeper.exe"; Description: "Start Lorekeeper now"; Flags: nowait postinstall skipifsilent
+; an update from inside the app runs this installer quietly with /AUTOSTART=1: come back on the new version
+Filename: "{app}\Lorekeeper.exe"; Flags: nowait; Check: AutoStart
 
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/IM Lorekeeper.exe /F"; Flags: runhidden; RunOnceId: "StopLorekeeper"
@@ -63,6 +65,11 @@ Filename: "{sys}\taskkill.exe"; Parameters: "/IM Lorekeeper.exe /F"; Flags: runh
 WelcomeLabel2=This installs Lorekeeper, a voice companion for PC games: hold a key in a game, ask out loud, hear the answer.%n%nYou'll need a Claude Pro or Max plan. If Claude Code isn't installed yet, Lorekeeper offers to set it up the first time it starts.
 
 [Code]
+function AutoStart(): Boolean;
+begin
+  Result := ExpandConstant('{param:AUTOSTART|0}') = '1';
+end;
+
 // Anonymous usage counts: asked here, once, with nothing pre-selected. The answer goes into %APPDATA%\Lorekeeper\config.json,
 // so the app doesn't ask again. Skipped when it was answered before (an upgrade); silent installs leave it to the app.
 var
