@@ -2,7 +2,7 @@
 
 <p align="center">
   Hold <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd> in any game, ask out loud, let go.<br>
-  Lorekeeper knows which game you're in, reads that game's wiki, and answers in your ear, <b>without spoilers</b>.
+  <b>A voice companion for PC games.</b> Lore, quest steps, items and builds, even clipping the moment,<br>answered in your ear for the game you're in, <b>without spoilers</b>.
 </p>
 
 <p align="center">

@@ -52,13 +52,15 @@ html, body { margin:0; padding:0; background:#000; }
 .content {
   position:absolute; z-index:2; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
 }
-.mascot { width:420px; height:auto; image-rendering:pixelated; filter:drop-shadow(12px 12px 0 var(--shadow)); margin-bottom:34px; }
+.mascot { width:270px; height:auto; image-rendering:pixelated; filter:drop-shadow(12px 12px 0 var(--shadow)); margin-bottom:26px; }
 h1 {
-  font-family:"Press Start 2P"; font-weight:400; font-size:84px; line-height:1; margin:0 0 34px; letter-spacing:2px;
+  font-family:"Press Start 2P"; font-weight:400; font-size:84px; line-height:1; margin:0 0 16px; letter-spacing:2px;
   text-shadow:6px 6px 0 var(--crimson-dark), 12px 12px 0 var(--shadow);
 }
-.hook { font-family:"Press Start 2P"; font-size:32px; line-height:1.4; margin:0; color:var(--sky); text-shadow:4px 4px 0 var(--shadow); }
+.hook { font-family:"Press Start 2P"; font-size:30px; line-height:1.5; margin:0; color:var(--sky); text-shadow:4px 4px 0 var(--shadow); }
 .hook b { color:#ffd23f; font-weight:400; }
+.hook .h1 { color:var(--ink); } .hook .h2 { color:var(--sky); } .hook .h3 { color:#ff8aa4; }
+.kicker { font-family:"VT323", monospace; font-size:62px; line-height:1; margin:0 0 22px; color:#ffd23f; letter-spacing:.04em; text-shadow:3px 3px 0 var(--shadow); }
 </style>
 </head>
 <body>
@@ -68,7 +70,8 @@ h1 {
   <div class="content">
     <img class="mascot" src="../img/book.svg" alt="" width="420" height="315">
     <h1>LOREKEEPER</h1>
-    <p class="hook">Your game's wiki, <b>out loud.</b></p>
+      <p class="kicker">A voice companion for PC games</p>
+    <p class="hook"><span class="h1">Hold a key.</span><br><span class="h2">Ask out loud.</span><br><span class="h3">Hear the answer.</span></p>
   </div>
   <div class="crt"></div>
 </div>

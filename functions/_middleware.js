@@ -1,6 +1,6 @@
 // Discord shows og:image small inside its embed, so serve it a punchier 16:9 card.
 // Every other request passes through untouched.
-const DISCORD_IMAGE = "https://lorekeeper-cgv.pages.dev/og/discord.png";
+const DISCORD_IMAGE = "https://lorekeeper-cgv.pages.dev/og/discord.png?v=3";   // bump ?v= when the image changes: Discord caches images by URL
 
 const setContent = (value) => ({
   element(el) { el.setAttribute("content", value); },
