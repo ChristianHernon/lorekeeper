@@ -26,6 +26,9 @@ DEFAULTS = {
     'spoilers': False,           # True: answers ignore your progress notes
     'screen': True,              # "what is this item" sends a screenshot
     'rommUrl': '',               # set by tray → RomM → Connect RomM… (the token is in Windows Credential Manager)
+    'telemetry': None,           # anonymous install/daily-use counts (telemetry.py): None = not asked yet, asked once on first run
+    'posthogKey': '',            # PostHog project API key (phc_…, write-only). Empty: nothing is ever sent
+    'posthogHost': 'https://us.i.posthog.com',
     'clipKeys': 'ctrl+f10',              # "clip it" presses this: Steam → Game Recording → "Save the last 30 seconds" (set it to Ctrl+F10), or Game Bar's win+alt+g
 }
 
