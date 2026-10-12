@@ -41,8 +41,45 @@ def rank(urls):
     return sorted(urls, key=score)
 
 
-def page(url, most=3500):
-    """A wiki page's source (infoboxes keep the quote/flavor text and stats), else the page as plain text."""
+def words(text):
+    """Content words, roughly stemmed ("botchlings" ~ "botchling"), for matching a question to sections."""
+    out = set()
+    for w in re.findall(r"[a-z][a-z']{3,}", text.lower()):
+        if not re.fullmatch(STOP, w) and not re.fullmatch(GENERIC, w):
+            out.add(re.sub(r"(?:'s|ing|ed|es|s)$", '', w))
+    return out
+
+
+def relevant(text, question, most=5000, lead=1500):
+    """The page's opening (infobox: quote, stats) plus the sections that best match the question, in page order.
+    Long pages (quest walkthroughs) keep the step being asked about instead of only the top."""
+    if len(text) <= most:
+        return text
+    want = words(question)
+    parts = re.split(r'(?m)^(=+[^=\n]+=+)\s*$', text)   # [lead, heading, body, heading, body, ...]
+    if len(parts) > 2:
+        secs = [(parts[i], parts[i + 1]) for i in range(1, len(parts) - 1, 2)]
+    else:   # plain page text: fixed-size chunks
+        secs = [('', text[i:i + 900]) for i in range(lead, len(text), 900)]
+        parts = [text[:lead]]
+    def score(sec):
+        h, body = sec
+        return 3 * len(want & words(h)) + sum(body.lower().count(w) for w in want)
+    head = parts[0][:lead]
+    room, keep = most - len(head), set()
+    for i in sorted(range(len(secs)), key=lambda i: -score(secs[i])):
+        if score(secs[i]) == 0 or room <= 200:
+            break
+        h, body = secs[i]
+        piece = (h + '\n' + body.strip())[:room]
+        keep.add((i, piece))
+        room -= len(piece)
+    return head + ''.join('\n\n' + piece for _, piece in sorted(keep))
+
+
+def page(url, question='', most=5000):
+    """A wiki page's source (infoboxes keep the quote/flavor text and stats), else the page as plain text;
+    cut to the parts that answer the question."""
     m = MEDIAWIKI.match(url)
     try:
         if m:
@@ -50,10 +87,10 @@ def page(url, most=3500):
             api = f'https://{m[1]}{api_path}?action=parse&format=json&prop=wikitext&redirects=1&page=' + m[2]
             j = json.loads(get(api))
             wt = j.get('parse', {}).get('wikitext', {}).get('*', '')
-            wt = re.sub(r'\[\[(?:File|Image|Category):[^\]]*\]\]|<!--.*?-->|<ref[^>]*>.*?</ref>', '', wt, flags=re.S)
+            wt = re.sub(r'\[\[(?:File|Image|Category):[^\]]*\]\]|<!--.*?-->|<ref[^>]*>.*?</ref>|<gallery>.*?</gallery>', '', wt, flags=re.S)
             if wt.strip():
-                return wt.strip()[:most]
-        return text_of(get(url))[:most]
+                return relevant(wt.strip(), question, most)
+        return relevant(text_of(get(url)), question, most)
     except Exception:
         return ''
 
@@ -185,5 +222,5 @@ def wiki(question, game, pages=2):
     if not urls:
         return ''
     with ThreadPoolExecutor(pages or 1) as ex:
-        texts = list(ex.map(page, urls))
+        texts = list(ex.map(lambda u: page(u, question), urls))
     return '\n\n'.join(f'Source: {u}\n{t}' for u, t in zip(urls, texts) if t)

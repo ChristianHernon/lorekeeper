@@ -38,3 +38,14 @@ def test_saved_screens():
     assert len(hit) == 1 and 'vault code' in hit[0][1]
     assert len(capture.saved_for(d, g, 'what did the screen I saved say')) == 2
     assert capture.saved_for(d, g, 'who is Ranni') == []
+
+
+def test_relevant_keeps_the_asked_section():
+    import lookup
+    lead = '{{Quest infobox | name = Family Matters}}\nThe Baron asks Geralt to find his family.\n'
+    filler = '\n'.join(f'== Step {i} ==\n' + ('Geralt follows the trail through the woods. ' * 40) for i in range(8))
+    late = '== The botchling ==\nGeralt can kill the botchling or lift the curse: the Baron must carry it to the old house.\n'
+    page = lead + filler + late + '== Rewards ==\n' + 'XP. ' * 300
+    out = lookup.relevant(page, 'I found the Botchling under the house, what should I do with it?')
+    assert out.startswith(lead.strip()[:20]) and 'lift the curse' in out and len(out) <= 5000
+    assert lookup.relevant('short page', 'anything') == 'short page'
