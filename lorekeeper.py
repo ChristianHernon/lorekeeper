@@ -359,6 +359,20 @@ def tray(app, box):
             box.show('Listen key', f"{hotkey.pretty(app.lk.combo)} turns listen mode on and off." if combo else 'Unchanged.')
         app.lk.record(done)
 
+    def use_voice(v):
+        def do(*_):
+            app.voice.stop()
+            app.voice.kokoro_voice = app.cfg['kokoroVoice'] = v
+            config.save(app.cfg)
+            app.voice.say(voice.PREVIEW)
+        return do
+
+    def voice_list():
+        kokoro = app.cfg['voice'] == 'kokoro'
+        return [pystray.MenuItem(name, use_voice(v), checked=lambda _, v=v: kokoro and app.cfg['kokoroVoice'] == v, radio=True, enabled=kokoro)
+                for name, v in voice.VOICES.items()] + [pystray.Menu.SEPARATOR,
+                pystray.MenuItem('Hear a sample', lambda *_: (app.voice.stop(), app.voice.say(voice.PREVIEW)))]
+
     menu = pystray.Menu(
         pystray.MenuItem(lambda _: f"Playing: {app.game['name'] if app.game else 'nothing detected'}", None, enabled=False),
         pystray.MenuItem('Pick the game', pystray.Menu(pick_list)),
@@ -366,13 +380,13 @@ def tray(app, box):
         pystray.MenuItem('Listen mode (say "Lorekeeper, …")', lambda *_: app.toggle_listen(), checked=lambda _: app.listener.on),
         pystray.MenuItem(lambda _: f'Listen key: {hotkey.pretty(app.lk.combo)}  (change…)', set_listen_key),
         pystray.MenuItem('Hotkey works outside games too', flip('hotkeyEverywhere'), checked=lambda _: app.cfg['hotkeyEverywhere']),
+        pystray.MenuItem('Voice', pystray.Menu(voice_list)),
         pystray.MenuItem('Spoilers', flip('spoilers'), checked=lambda _: app.cfg['spoilers']),
         pystray.MenuItem('Show answers in a box', flip('box'), checked=lambda _: app.cfg['box']),
         pystray.MenuItem('Use the screen', flip('screen'), checked=lambda _: app.cfg['screen']),
         pystray.MenuItem("This game's notes", lambda *_: app.game and (notes.add(app.game, 'notes opened') if not os.path.exists(notes.path(app.game)) else None,
                                                                      os.startfile(notes.path(app.game))), enabled=lambda _: bool(app.game)),
         pystray.MenuItem('Settings file', lambda *_: (config.save(app.cfg), os.startfile(config.FILE))),
-        pystray.MenuItem('Voice samples', lambda *_: os.startfile(os.path.join(config.DIR, 'voices')) if os.path.isdir(os.path.join(config.DIR, 'voices')) else None),
         pystray.MenuItem('Ask log', lambda *_: os.path.exists(LOG) and os.startfile(LOG)),
         pystray.MenuItem('Quit', quit_))
     icon = pystray.Icon('Lorekeeper', img, 'Lorekeeper', menu)

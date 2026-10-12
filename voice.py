@@ -132,8 +132,22 @@ def split(text):
     return [s.strip() for s in re.split(r'(?<=[.!?])\s+|\n+', text) if re.search(r'\w', s)]
 
 
-KOKORO_SAMPLES = ['bf_isabella', 'bf_isabella:0.75,bm_george:0.25', 'af_nicole', 'af_nicole:0.5,bf_isabella:0.5', 'bf_emma',
-                  'bf_alice', 'af_heart', 'af_bella', 'af_sarah', 'af_kore']
+VOICES = {   # tray → Voice: name shown -> kokoroVoice
+    'Nicole + Isabella (default)': 'af_nicole:0.5,bf_isabella:0.5',
+    'Isabella, low': 'bf_isabella:0.75,bm_george:0.25',
+    'Isabella (British)': 'bf_isabella',
+    'Nicole (soft, breathy)': 'af_nicole',
+    'Emma (British)': 'bf_emma',
+    'Alice (British)': 'bf_alice',
+    'Heart (American, warm)': 'af_heart',
+    'Bella (American)': 'af_bella',
+    'Sarah (American)': 'af_sarah',
+    'Kore (American)': 'af_kore',
+    'George (British man)': 'bm_george',
+    'Michael (American man)': 'am_michael',
+}
+KOKORO_SAMPLES = list(VOICES.values())
+PREVIEW = 'Lorekeeper here. Ask me anything about your game.'
 
 
 def samples(folder, models, line='The Gilded Hydra fires bouncing, piercing bursts. Its flavor text: Heads Up!'):

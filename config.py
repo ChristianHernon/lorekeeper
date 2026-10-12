@@ -17,7 +17,7 @@ DEFAULTS = {
     'whisper': 'base.en',        # base.en is quick on CPU; small.en hears names better
     'whisperDevice': 'cpu',      # cuda with an NVIDIA card and the CUDA libraries
     'voice': 'kokoro',           # kokoro: neural, on this PC; edge: Microsoft online; sapi: Windows' own (robotic)
-    'kokoroVoice': 'bf_isabella:0.75,bm_george:0.25',   # a blend reads lower; samples: tray → Voice samples
+    'kokoroVoice': 'af_nicole:0.5,bf_isabella:0.5',   # tray → Voice; or any kokoro voice or blend "a:0.5,b:0.5"
     'edgeVoice': 'en-GB-SoniaNeural',
     'pitch': '-8Hz',             # edge only: lower = throatier
     'rate': 0,                   # speed, -10..10

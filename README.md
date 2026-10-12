@@ -33,7 +33,7 @@ Slots understand the usual words (helmet/head, chest piece, off hand, second rin
 - **Ears:** Whisper (faster-whisper) runs on your PC, so audio never leaves it. It's hinted with the game's name and the names in your notes, so it spells "Malenia" right.
 - **Game:** the exe of the window in front, matched against the games Steam, Epic and GOG installed. For an emulator, or if it guesses wrong, say *"I'm playing Chrono Trigger"* or pick from the tray menu.
 - **Answer:** the game's wiki pages are fetched first (wiki.gg and Fandom page source, which includes infobox quotes), then `claude -p` on your Claude plan answers from them, or searches if they don't cover it. That's about 3–4 s and about 0.1¢ per ask with Haiku. Say *"in detail"* or *"tell me more"* to use Sonnet.
-- **Voice:** [Kokoro](https://github.com/thewh1teagle/kokoro-onnx), a neural voice that runs on your PC. The default is a lower blend of a British woman's voice. Answers are spoken a sentence at a time as they arrive. Tap the hotkey to stop it.
+- **Voice:** [Kokoro](https://github.com/thewh1teagle/kokoro-onnx), a neural voice that runs on your PC. The default blends a soft American voice (Nicole) with a British one (Isabella); pick another from tray → **Voice**. Answers are spoken a sentence at a time as they arrive. Tap the hotkey to stop it.
 - **Box:** a small box shows the question and answer, on a second monitor if you have one. Click it to copy.
 
 ## Setup
@@ -58,7 +58,7 @@ Tray → **Settings file** (`%APPDATA%\Lorekeeper\config.json`):
 | `whisper` | `base.en` | `small.en` hears names better, but is slower on CPU |
 | `whisperDevice` | `cpu` | `cuda` with an NVIDIA GPU and the CUDA libraries |
 | `voice` | `kokoro` | natural voice on your PC. `edge` = Microsoft online voices, `sapi` = Windows' robotic one |
-| `kokoroVoice` | `bf_isabella:0.75,bm_george:0.25` | a voice or a blend; hear them all with tray → **Voice samples** (`lorekeeper.py --voices`) |
+| `kokoroVoice` | `af_nicole:0.5,bf_isabella:0.5` | pick from tray → **Voice** (it speaks a line as you choose). Any [Kokoro voice](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md) or blend like `af_nicole:0.5,bf_isabella:0.5` works here |
 | `spoilers` | `false` | also in the tray |
 | `screen` | `true` | send screenshots for "what is this" questions |
 
