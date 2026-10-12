@@ -1,13 +1,14 @@
 """Updates from GitHub releases: a check at start and once a day (one call to GitHub's API, nothing about you sent),
 then, if you say so, download the new installer, run it quietly, and come back on the new version.
 An installed copy updates itself; a source checkout (git) is pointed at the release page instead. Off: "checkUpdates": false."""
-import json, os, re, subprocess, sys, tempfile, threading, time, urllib.request
+import hashlib, json, os, re, shutil, subprocess, sys, tempfile, threading, time, urllib.request
 import config
 
 REPO = 'FindlayHi/lorekeeper'
 API = f'https://api.github.com/repos/{REPO}/releases/latest'
 PAGE = f'https://github.com/{REPO}/releases/latest'
 ASSET = 'Lorekeeper-Setup.exe'
+DOWNLOADS = f'https://github.com/{REPO}/releases/download/'   # the only place an installer is fetched from
 DAY = 24 * 3600
 
 
@@ -35,20 +36,46 @@ def latest():
     return j.get('tag_name', '').lstrip('v'), url, j.get('html_url', PAGE)
 
 
+def trusted(url):
+    """Only this repo's release assets: whatever the API response says, nothing else is downloaded and run."""
+    return isinstance(url, str) and url.startswith(DOWNLOADS)
+
+
+def checksum(url):
+    """The installer's expected SHA-256 from the release's Lorekeeper-Setup.exe.sha256 ("<hex>  <name>"), lower-case."""
+    req = urllib.request.Request(url + '.sha256', headers={'User-Agent': 'Lorekeeper-updater'})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        m = re.match(r'\s*([0-9a-fA-F]{64})(?![0-9a-fA-F])', r.read(4096).decode('ascii', 'replace'))
+    if not m:
+        raise ValueError('the release has no readable checksum')
+    return m.group(1).lower()
+
+
 def download(url, progress=lambda done, total: None):
-    """The installer to a temp file -> its path."""
-    path = os.path.join(tempfile.gettempdir(), ASSET)
-    with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Lorekeeper-updater'}), timeout=60) as r, \
-            open(path + '.part', 'wb') as out:
-        total, got = int(r.headers.get('Content-Length') or 0), 0
-        while True:
-            chunk = r.read(1 << 20)
-            if not chunk:
-                break
-            out.write(chunk)
-            got += len(chunk)
-            progress(got, total)
-    os.replace(path + '.part', path)
+    """The installer, checked against the release's published SHA-256, in a folder of its own -> its path.
+    A wrong hash or an untrusted URL raises; nothing unchecked is ever returned."""
+    if not trusted(url):
+        raise ValueError("the installer is not from this repo's releases")
+    want = checksum(url)
+    folder = tempfile.mkdtemp(prefix='lorekeeper-update-')   # a name nobody can guess ahead of time
+    path, h = os.path.join(folder, ASSET), hashlib.sha256()
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Lorekeeper-updater'}), timeout=60) as r, \
+                open(path, 'wb') as out:
+            total, got = int(r.headers.get('Content-Length') or 0), 0
+            while True:
+                chunk = r.read(1 << 20)
+                if not chunk:
+                    break
+                out.write(chunk)
+                h.update(chunk)
+                got += len(chunk)
+                progress(got, total)
+        if h.hexdigest() != want:
+            raise ValueError('the download does not match its published checksum')
+    except BaseException:
+        shutil.rmtree(folder, ignore_errors=True)
+        raise
     return path
 
 
@@ -91,7 +118,7 @@ class Updater:
         if not self.available:
             return
         v, url, page = self.available
-        if not installed() or not url:
+        if not installed() or not trusted(url):
             os.startfile(page)
             return
 

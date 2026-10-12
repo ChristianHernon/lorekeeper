@@ -374,7 +374,8 @@ def tray(app, box):
                 return
 
             def on_code(code, approve):
-                box.show('Connect RomM', f'Approve code {code} in RomM. Opening it in your browser…', stay=True, title=True)
+                plain = ' This address is plain http: the token will cross your network unencrypted.' if approve.startswith('http://') else ''
+                box.show('Connect RomM', f'Approve code {code} in RomM. Opening it in your browser…{plain}', stay=True, title=True)
                 os.startfile(approve)
 
             def on_done(user, err):

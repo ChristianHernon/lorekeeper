@@ -1,11 +1,14 @@
 """First run of an installed Lorekeeper: what setup.ps1 does for a source checkout, done from the app.
   - the Kokoro voice model (~120 MB) downloads in the background, progress in the box; answers use Windows' voice until then
   - no Claude Code? offer to install it (Anthropic's official installer, in a terminal window) and open it to sign in"""
-import os, shutil, subprocess, threading, urllib.request
+import hashlib, os, shutil, subprocess, threading, urllib.request
 import config
 
 MODEL_URL = 'https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/'
 MODEL_FILES = ('kokoro-v1.0.int8.onnx', 'voices-v1.0.bin')
+MODEL_SHA256 = {   # of the model-files-v1.0 release's files; a download that differs is thrown away (keep setup.ps1 in step)
+    'kokoro-v1.0.int8.onnx': '6e742170d309016e5891a994e1ce1559c702a2ccd0075e67ef7157974f6406cb',
+    'voices-v1.0.bin': 'bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d'}
 CLAUDE_INSTALL = 'irm https://claude.ai/install.ps1 | iex'
 
 
@@ -14,7 +17,8 @@ def missing_models():
 
 
 def download_models(progress=lambda done, total: None):
-    """Fetch the missing model files, each to a .part file renamed when whole. Returns True when all are present."""
+    """Fetch the missing model files, each to a .part file renamed when whole and matching its SHA-256 (a mismatch raises
+    and leaves nothing behind). Returns True when all are present."""
     os.makedirs(config.MODELS, exist_ok=True)
     todo = missing_models()
     sizes, got = {}, 0
@@ -27,15 +31,19 @@ def download_models(progress=lambda done, total: None):
     total = sum(sizes.values())
     for f in todo:
         dest = os.path.join(config.MODELS, f)
-        part = dest + '.part'
+        part, h = dest + '.part', hashlib.sha256()
         with urllib.request.urlopen(urllib.request.Request(MODEL_URL + f, headers={'User-Agent': 'Lorekeeper'}), timeout=60) as r, open(part, 'wb') as out:
             while True:
                 chunk = r.read(1 << 20)
                 if not chunk:
                     break
                 out.write(chunk)
+                h.update(chunk)
                 got += len(chunk)
                 progress(got, total)
+        if h.hexdigest() != MODEL_SHA256[f]:
+            os.remove(part)
+            raise ValueError(f'{f} does not match its expected checksum')
         os.replace(part, dest)
     return not missing_models()
 
