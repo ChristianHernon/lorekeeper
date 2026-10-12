@@ -13,8 +13,12 @@ DEFAULTS = {
     'listen': False,             # listen mode: no key to hold, start with "Lorekeeper, …"
     'listenKey': 'ctrl+alt+l',   # turns listen mode on and off
     'followUpSeconds': 8,        # after an answer, this long to ask a follow-up without the wake word
-    'model': 'haiku',            # quick answers; "in detail" asks use deepModel
+    'ai': 'claude',              # who answers: claude (Claude Code on your Claude plan) or openai (any OpenAI-compatible server; tray → AI)
+    'model': 'haiku',            # Claude Code: quick answers; "in detail" asks use deepModel
     'deepModel': 'sonnet',
+    'aiUrl': '',                 # openai: the server, e.g. http://localhost:11434/v1 (Ollama), http://localhost:1234/v1 (LM Studio)
+    'aiModel': '',               # openai: the model for quick answers (tray → AI lists the server's)
+    'aiDeepModel': '',           # openai: for "in detail" and gear math; '' = aiModel
     'mic': '',                   # a microphone by name (tray → Microphone); '' = Windows' default input
     'whisper': 'base.en',        # base.en is quick on CPU; small.en hears names better
     'whisperDevice': 'cpu',      # cuda with an NVIDIA card and the CUDA libraries

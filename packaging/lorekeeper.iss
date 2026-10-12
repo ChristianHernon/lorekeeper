@@ -62,7 +62,7 @@ Filename: "{app}\Lorekeeper.exe"; Flags: nowait; Check: AutoStart
 Filename: "{sys}\taskkill.exe"; Parameters: "/IM Lorekeeper.exe /F"; Flags: runhidden; RunOnceId: "StopLorekeeper"
 
 [Messages]
-WelcomeLabel2=This installs Lorekeeper, a voice companion for PC games: hold a key in a game, ask out loud, hear the answer.%n%nYou'll need a Claude Pro or Max plan. If Claude Code isn't installed yet, Lorekeeper offers to set it up the first time it starts.
+WelcomeLabel2=This installs Lorekeeper, a voice companion for PC games: hold a key in a game, ask out loud, hear the answer.%n%nIt answers through Claude Code on a Claude Pro or Max plan, or your own Ollama, LM Studio or OpenAI key (pick in the tray, under AI). If Claude Code isn't installed yet, Lorekeeper offers to set it up the first time it starts.
 
 [Code]
 function AutoStart(): Boolean;
@@ -185,6 +185,7 @@ begin
         'Claude Code is installed, so Lorekeeper is ready. Hold Ctrl+Alt+Space in a game and ask.'
     else
       WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10#13#10 +
-        'One more step: Lorekeeper needs Claude Code (with a Claude Pro or Max plan). It isn''t installed yet, ' +
-        'so when Lorekeeper starts it will offer to install it and help you sign in.';
+        'One more step: Lorekeeper answers through Claude Code (with a Claude Pro or Max plan). It isn''t installed yet, ' +
+        'so when Lorekeeper starts it will offer to install it and help you sign in. ' +
+        'Or pick Ollama, LM Studio or OpenAI from the tray, under AI.';
 end;

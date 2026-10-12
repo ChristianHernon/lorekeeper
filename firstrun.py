@@ -1,6 +1,7 @@
 """First run of an installed Lorekeeper: what setup.ps1 does for a source checkout, done from the app.
   - the Kokoro voice model (~120 MB) downloads in the background, progress in the box; answers use Windows' voice until then
-  - no Claude Code? offer to install it (Anthropic's official installer, in a terminal window) and open it to sign in"""
+  - no Claude Code, and it's the AI picked? offer to install it (Anthropic's official installer, in a terminal window) and open
+    it to sign in, or point at tray → AI for Ollama / LM Studio / OpenAI"""
 import hashlib, os, shutil, subprocess, threading, urllib.request
 import config
 
@@ -88,7 +89,7 @@ def run(app, box):
             box.show('Voice download failed', 'Answers use the Windows voice for now. Lorekeeper tries again next time it starts.', title=True)
 
     def claude():
-        if claude_installed():
+        if app.cfg.get('ai', 'claude') != 'claude' or claude_installed():
             return
 
         def ask():
@@ -96,12 +97,13 @@ def run(app, box):
             if messagebox.askyesno('Lorekeeper needs Claude Code',
                                    'Lorekeeper answers through Claude Code, on the Claude Pro or Max plan you already have '
                                    '(no API key, no extra bill).\n\nInstall Claude Code now? A window opens with Anthropic\'s '
-                                   'official installer, then asks you to sign in.', parent=box.root):
+                                   'official installer, then asks you to sign in.\n\nNo Claude plan? Say no, then pick Ollama, '
+                                   'LM Studio or an OpenAI key in the tray under AI.', parent=box.root):
                 install_claude()
                 box.show('Claude Code', 'Finish the install and sign in in the window that opened. Then hold the hotkey in a game and ask.',
                          stay=True, title=True)
             else:
-                box.show('Claude Code', 'Lorekeeper can\'t answer without it. Install it any time: claude.com/claude-code', stay=True, title=True)
+                box.show('Claude Code', 'Install it any time (claude.com/claude-code), or pick another AI in the tray: AI.', stay=True, title=True)
         box.root.after(2500, ask)
 
     def both():

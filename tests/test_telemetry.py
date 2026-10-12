@@ -49,10 +49,20 @@ def test_only_counts_and_switches_leave():
     c = cfg(listen=True, rommUrl='http://192.168.0.50:3010', voice='edge')
     telemetry.ping(c, sender)
     props = calls[0][2]
-    assert set(props) == {'version', 'commit', 'os', 'os_build', 'listen', 'romm', 'voice',
+    assert set(props) == {'version', 'commit', 'os', 'os_build', 'listen', 'romm', 'voice', 'ai',
                           '$process_person_profile', '$geoip_disable', '$lib'}
     assert props['listen'] is True and props['romm'] is True and props['voice'] == 'edge'
     assert '192.168' not in json.dumps(props)   # the RomM address itself never goes
+
+
+def test_the_ai_goes_as_a_kind_never_its_address_or_model():
+    calls, sender = sent()
+    telemetry.ping(cfg(ai='openai', aiUrl='http://192.168.0.9:11434/v1', aiModel='secret-finetune'), sender)
+    props = calls[0][2]
+    assert props['ai'] == 'custom'
+    assert '192.168' not in json.dumps(props) and 'secret' not in json.dumps(props)
+    assert telemetry.props(cfg(ai='openai', aiUrl='http://localhost:11434/v1'))['ai'] == 'ollama'
+    assert telemetry.props(cfg())['ai'] == 'claude'
 
 
 def test_asked_once_only_when_it_could_send(monkeypatch):

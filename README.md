@@ -10,6 +10,7 @@
   <img alt="Mac coming soon" src="https://img.shields.io/badge/Mac-coming_soon-3b1f6e?style=for-the-badge&logo=apple&logoColor=f2efe6">
   <img alt="Python" src="https://img.shields.io/badge/Python_3.10+-3b1f6e?style=for-the-badge&logo=python&logoColor=f2efe6">
   <img alt="Claude" src="https://img.shields.io/badge/Claude_Pro%20%7C%20Max-7a3cff?style=for-the-badge&logo=anthropic&logoColor=f2efe6">
+  <img alt="Or Ollama, LM Studio, OpenAI" src="https://img.shields.io/badge/or-Ollama%20%7C%20LM_Studio%20%7C%20OpenAI-3b1f6e?style=for-the-badge">
   <img alt="Cost" src="https://img.shields.io/badge/~0.1%C2%A2_per_ask-e0284f?style=for-the-badge">
   <img alt="Offline voice" src="https://img.shields.io/badge/voice-offline-2f6bff?style=for-the-badge">
 </p>
@@ -26,7 +27,7 @@
 <tr>
 <td width="25%" valign="top" align="center"><img src="docs/img/mic.svg" width="48" alt=""><br><b>1 · Hold &amp; ask</b><br><sub>Hold the hotkey and talk, or turn on listen mode and say "Lorekeeper, …". Whisper hears you <i>on your PC</i>; audio never leaves it.</sub></td>
 <td width="25%" valign="top" align="center"><img src="docs/img/pad.svg" width="48" alt=""><br><b>2 · Game detected</b><br><sub>Matched from your Steam, Epic and GOG installs. Emulator? Say "I'm playing Chrono Trigger" or pick it in the tray.</sub></td>
-<td width="25%" valign="top" align="center"><img src="docs/img/scroll.svg" width="48" alt=""><br><b>3 · Wiki + Claude</b><br><sub>That game's wiki is searched directly, then Claude answers through Claude Code on the plan you already have. No API key; about 3–5 s.</sub></td>
+<td width="25%" valign="top" align="center"><img src="docs/img/scroll.svg" width="48" alt=""><br><b>3 · Wiki + Claude</b><br><sub>That game's wiki is searched directly, then Claude answers through Claude Code on the plan you already have (no API key; about 3–5 s), or your own Ollama, LM Studio or OpenAI.</sub></td>
 <td width="25%" valign="top" align="center"><img src="docs/img/speaker.svg" width="48" alt=""><br><b>4 · Hear it</b><br><sub>A natural voice reads it a sentence at a time, offline. A small box shows it too, on your second monitor.</sub></td>
 </tr>
 </table>
@@ -57,19 +58,33 @@
 <tr>
 <td valign="top"><h3>⚔️ Gear tracker</h3>Hover an item: "save this as my helm". Later: "is this better than my helm?" compares stat by stat. Made for Diablo; works with any tooltip.</td>
 <td valign="top"><h3>🖥️ Fullscreen-proof</h3>Exclusive fullscreen is fine: the hotkey, the voice and screen capture all work. Settable hotkey, including mouse side buttons.</td>
-<td valign="top"><h3>🔓 Free &amp; open</h3>Runs on the Claude plan you have, about 0.1¢ per ask. Voice and speech-to-text run on your PC. All the code is right here.</td>
+<td valign="top"><h3>🔓 Free &amp; open</h3>Runs on the Claude plan you have (about 0.1¢ per ask), or free on your own GPU with Ollama or LM Studio. Voice and speech-to-text run on your PC. All the code is right here.</td>
 </tr>
 </table>
 
 ## Install
 
-You need **Windows 10 or 11** (Mac is coming soon) and a **Claude Pro or Max** plan.
+You need **Windows 10 or 11** (Mac is coming soon) and one of: a **Claude Pro or Max** plan, a local model in **Ollama** or **LM Studio**, or an **OpenAI** (or other OpenAI-compatible) API key. See [Choose your AI](#choose-your-ai).
 
 1. **[Download Lorekeeper-Setup.exe](https://github.com/FindlayHi/lorekeeper/releases/latest/download/Lorekeeper-Setup.exe)** and run it. There's no admin prompt, and it installs just for you.
 2. Windows may say *"Windows protected your PC"*, because the installer isn't code-signed yet. Click **More info → Run anyway**.
 3. Lorekeeper starts in the tray. The first time, it downloads its voice (about 120 MB), and if [Claude Code](https://claude.com/claude-code) isn't installed it offers to install it and helps you sign in.
 
 Then launch a game and hold <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd>.
+
+### Choose your AI
+
+Tray → **AI** picks who answers:
+
+| | What you need | Notes |
+|---|---|---|
+| **Claude Code** *(default)* | a Claude Pro or Max plan | best answers: it also searches the web when the wiki pages Lorekeeper fetched don't cover it |
+| **Ollama** | [Ollama](https://ollama.com) running, with a model pulled | free, on your GPU. A vision model (`gemma3:4b`, `qwen2.5vl:7b`) also reads the screen for "what is this" |
+| **LM Studio** | [LM Studio](https://lmstudio.ai)'s server on, with a model loaded | same as Ollama |
+| **OpenAI API** | an API key (tray → AI → **API key…**) | pay per use |
+| **Custom server…** | any OpenAI-compatible `/v1` address: OpenRouter, Groq, llama.cpp, vLLM… | key optional |
+
+Pick one, then pick its model from the list under it, and **Test**. Lorekeeper always fetches the game's wiki pages before it asks, so a model with no web search still answers from the wiki. When the pages don't cover it, it says so rather than guessing. Keys are kept in Windows Credential Manager, never in the settings file.
 
 <details>
 <summary><b>From source</b> (Python 3.10+)</summary>
@@ -143,7 +158,9 @@ Everything per game is a plain file you can edit, in `%APPDATA%\Lorekeeper\games
 | `clipKeys` | `ctrl+f10` | in Steam → Settings → Game Recording, set **Save the last 30 seconds** to <kbd>Ctrl</kbd>+<kbd>F10</kbd>. Or use `win+alt+g` for Game Bar |
 | `kokoroVoice` | `af_nicole:0.5,bf_isabella:0.5` | tray → **Voice**, or any [Kokoro voice](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md) or blend |
 | `voice` | `kokoro` | `edge` = Microsoft online voices; `sapi` = Windows' robotic one |
-| `model` / `deepModel` | `haiku` / `sonnet` | say "in detail" or "tell me more" for the deep one |
+| `ai` | `claude` | `claude`, or `openai` for any OpenAI-compatible server (tray → **AI**) |
+| `model` / `deepModel` | `haiku` / `sonnet` | Claude Code's models; say "in detail" or "tell me more" for the deep one |
+| `aiUrl` / `aiModel` / `aiDeepModel` | | the server (e.g. `http://localhost:11434/v1`), its model, and an optional bigger one for "in detail" and gear math (blank = `aiModel`) |
 | `whisper` / `whisperDevice` | `base.en` / `cpu` | `small.en` hears names better; `cuda` with an NVIDIA GPU |
 | `spoilers` / `screen` | `false` / `true` | also in the tray |
 | `telemetry` | *(asked on first run)* | anonymous usage counts; also in the tray. See [Privacy](#privacy--usage-counts) |
@@ -173,7 +190,7 @@ python lorekeeper.py --voices                         # sample wavs of every voi
 
 ## Privacy & usage counts
 
-Your voice and its transcription stay on your PC. Your question (and a screenshot, when it asks about the screen) goes to Claude through your own Claude Code login, and wiki searches go to the game's wiki. Nothing else about what you play or say leaves your PC.
+Your voice and its transcription stay on your PC. Your question (and a screenshot, when it asks about the screen) goes to the AI you picked: Claude through your own Claude Code login, or your Ollama / LM Studio (which stay on your PC) or API provider. Wiki searches go to the game's wiki. Nothing else about what you play or say leaves your PC.
 
 To know how many people use it, Lorekeeper sends an **anonymous count** to [PostHog](https://posthog.com): an `installed` event once, and an `active` event at most once a day. Each carries only:
 
@@ -183,8 +200,9 @@ To know how many people use it, Lorekeeper sends an **anonymous count** to [Post
 | Lorekeeper's version and commit | `0.1.0`, `2b5b271` |
 | Windows version | `Windows 11`, build `26200` |
 | whether listen mode and RomM are on, and the voice engine | `true`, `false`, `kokoro` |
+| which kind of AI answers (never its address or model) | `claude`, `ollama`, `lmstudio`, `openai`, `custom` |
 
-Never your games, questions, answers, notes, screenshots, file paths, user name, RomM address or hardware. No person profiles, and IP geolocation is turned off. The code is all in [`telemetry.py`](telemetry.py). The installer asks whether you want to share these counts, with neither answer picked for you (installs from source are asked the first time Lorekeeper runs). Nothing is sent unless you say yes.
+Never your games, questions, answers, notes, screenshots, file paths, user name, RomM address, AI address, model or key, or hardware. No person profiles, and IP geolocation is turned off. The code is all in [`telemetry.py`](telemetry.py). The installer asks whether you want to share these counts, with neither answer picked for you (installs from source are asked the first time Lorekeeper runs). Nothing is sent unless you say yes.
 
 **To change your answer:** tray → **Share anonymous usage counts**, or `"telemetry": true/false` in the settings file. Setting the `DO_NOT_TRACK=1` environment variable also turns it off and skips the question. Off means nothing is sent and no id is made.
 

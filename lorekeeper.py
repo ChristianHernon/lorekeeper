@@ -2,7 +2,8 @@
 """Lorekeeper: hold Ctrl+Alt+Space in a game, ask out loud, let go, hear the answer.
 
 It knows which game is in front (Steam, Epic, GOG installs; or pin one from the tray / "I'm playing X"), looks the
-answer up on the game's wiki through `claude -p` on your Claude plan, and reads it aloud. Progress notes per game keep
+answer up on the game's wiki through `claude -p` on your Claude plan (or your own Ollama / LM Studio / OpenAI-compatible
+server), and reads it aloud. Progress notes per game keep
 answers spoiler-safe ("I just beat Margit"); "spoil it" re-asks without the guard. "Clip it" presses your clip key.
   lorekeeper.py                 run (tray icon)
   lorekeeper.py --ask "<q>"     one question for the game in front, typed, printed (no voice)
@@ -11,7 +12,7 @@ answers spoiler-safe ("I just beat Margit"); "spoil it" re-asks without the guar
   lorekeeper.py --voices        sample wavs of the voices, to choose kokoroVoice
 Settings: %APPDATA%/Lorekeeper/config.json. Log: log.jsonl beside it.
 """
-import json, os, sys, threading, time
+import json, os, re, sys, threading, time
 
 if sys.platform == 'win32':
     for stream in (sys.stdout, sys.stderr):
@@ -48,6 +49,7 @@ class App:
     def __init__(self, cfg, box=None):
         import ears, capture
         self.cfg, self._box = cfg, box
+        brain.use(cfg)
         self.ears = ears.Ears(cfg['whisper'], cfg['whisperDevice'])
         self.ears.mic = cfg['mic']
         self.voice = voice.Voice(cfg['voice'], cfg['edgeVoice'], cfg['rate'], cfg['pitch'], cfg['kokoroVoice'], config.MODELS)
@@ -266,7 +268,7 @@ class App:
         model = self.cfg['deepModel'] if brain.DEEP.search(q) or (kit or shots) and gear.wants(q) else self.cfg['model']   # gear math: the bigger model
         p = self.warm.take(model, spoilers)
         if not p:
-            return self.say(q, 'Claude Code is not installed. Install it and sign in, then ask again.')
+            return self.say(q, 'Claude Code is not installed. Install it and sign in, or pick another AI in the tray, then ask again.')
         if capture.wants(q) and self.cfg['screen'] and not shots and not saved:
             self.voice.say("I couldn't see the screen, so going by your words.")
         now = time.time()
@@ -464,6 +466,110 @@ def tray(app, box):
         host = romm.url().split('://', 1)[-1]
         return [Item('Connected to', enabled=False, note=host), Item('Disconnect', action=disconnect_romm)]
 
+    ai_models = {'url': None, 'ids': [], 'err': ''}   # the server's models, fetched off the Tk thread
+
+    def redraw():
+        box.root.after(0, lambda: [p.draw() for p in pnl.panes()])
+
+    def fetch_models(then=None):
+        def run():
+            url = app.cfg.get('aiUrl')
+            try:
+                ids, err = brain.models(app.cfg), ''
+            except Exception as e:
+                ids, err = [], str(e)
+            ai_models.update(url=url, ids=ids, err=err)
+            if ids and app.cfg.get('aiModel') not in ids:   # a new server: start on its first model
+                app.cfg['aiModel'] = ids[0]
+                config.save(app.cfg)
+            redraw()
+            if then:
+                then(ids, err)
+        threading.Thread(target=run, daemon=True).start()
+
+    def ai_changed():
+        app.warm.drop()   # the process started ahead belongs to the old AI
+        config.save(app.cfg)
+        brain.use(app.cfg)
+
+    def use_ai(k):
+        def do():
+            if k == 'claude':
+                app.cfg['ai'] = 'claude'
+                ai_changed()
+                return box.show('AI', 'Claude Code answers, on your Claude plan.' if brain.claude_ok() else
+                                "Claude Code answers, but it isn't installed yet: claude.com/claude-code", title=True)
+            app.cfg['ai'], app.cfg['aiUrl'] = 'openai', brain.PRESETS[k][1]
+            ai_changed()
+            box.show('AI', f'Asking {brain.name()} for its models…', stay=True, title=True)
+            fetch_models(lambda ids, err: box.show('AI', err or (
+                f"{brain.name()} answers with {app.cfg['aiModel']}. Pick another model under AI." if ids else
+                f'{brain.name()} has no models yet.' + (' Pull one with: ollama pull gemma3:4b' if k == 'ollama' else
+                                                       ' Download and load one in LM Studio.' if k == 'lmstudio' else '')), title=True))
+        return do
+
+    def custom_ai():
+        def ask():   # on the Tk thread
+            from tkinter import simpledialog
+            addr = simpledialog.askstring('Custom AI server', 'An OpenAI-compatible address, ending in /v1\ne.g. https://openrouter.ai/api/v1',
+                                          initialvalue=app.cfg.get('aiUrl') or 'http://', parent=box.root)
+            if not addr or addr.strip() in ('http://', 'https://'):
+                return
+            app.cfg['ai'], app.cfg['aiUrl'] = 'openai', addr.strip().rstrip('/')
+            ai_changed()
+            box.show('AI', 'Asking the server for its models…', stay=True, title=True)
+            fetch_models(lambda ids, err: box.show('AI', err or (f"Answering with {app.cfg['aiModel']}. Pick another model under AI." if ids else
+                                                                 'The server lists no models. Set aiModel in the settings file.'), title=True))
+        box.root.after(0, ask)
+
+    def use_model(m):
+        def do():
+            app.cfg['aiModel'] = m
+            ai_changed()
+        return do
+
+    def set_ai_key():
+        def ask():
+            from tkinter import simpledialog
+            url = app.cfg.get('aiUrl', '')
+            plain = url.startswith('http://') and not re.match(r'http://(localhost|127\.|\[::1\])', url)
+            k = simpledialog.askstring('API key', f'The API key for {brain.name()} (blank removes it). Kept in Windows Credential Manager.'
+                                       + ('\n\nThis address is plain http: the key crosses your network unencrypted.' if plain else ''),
+                                       show='*', parent=box.root)
+            if k is None:
+                return
+            brain.set_key(k.strip())
+            box.show('AI', 'Key saved.' if k.strip() else 'Key removed.', title=True)
+            if brain.http():
+                fetch_models()
+        box.root.after(0, ask)
+
+    def test_ai():
+        def run():
+            box.show('AI', f'Testing {brain.name()}…', stay=True, title=True)
+            ok, msg = brain.test(app.cfg)
+            box.show('AI', msg, title=True)
+        threading.Thread(target=run, daemon=True).start()
+
+    def ai_page():
+        k = brain.kind(app.cfg)
+        rows = [Item('Claude Code (your Claude plan)', action=use_ai('claude'), radio=lambda: brain.kind(app.cfg) == 'claude')]
+        rows += [Item(n if p != 'openai' else 'OpenAI API', action=use_ai(p), radio=lambda p=p: brain.kind(app.cfg) == p)
+                 for p, (n, _) in brain.PRESETS.items()]
+        rows.append(Item('Custom server…', action=custom_ai, radio=lambda: brain.kind(app.cfg) == 'custom'))
+        if k != 'claude':
+            if ai_models['url'] != app.cfg.get('aiUrl'):
+                ai_models['url'] = app.cfg.get('aiUrl')   # once per address; the page redraws when they arrive
+                fetch_models()
+            rows.append(Item('MODEL', header=True))
+            if ai_models['ids']:
+                rows += [Item(m, action=use_model(m), radio=lambda m=m: app.cfg.get('aiModel') == m) for m in ai_models['ids']]
+            else:
+                rows.append(Item(app.cfg.get('aiModel') or 'No models found', enabled=False, note='' if app.cfg.get('aiModel') else 'none'))
+            rows.append(Item('API key…', action=set_ai_key, note=lambda: 'set' if brain.key() else 'none'))
+        rows.append(Item('Test', action=test_ai, note=lambda: brain.name(app.cfg)))
+        return rows
+
     def notes_open():
         if not os.path.exists(notes.path(app.game)):
             notes.add(app.game, 'notes opened')
@@ -482,6 +588,7 @@ def tray(app, box):
             Item(lambda: f'Listen key: {hotkey.pretty(app.lk.combo)}', action=set_listen_key, note='change'),
             Item('Microphone', sub=mics_page),
             Item('VOICE & ANSWERS', header=True),
+            Item(lambda: f'AI: {brain.name(app.cfg)}', sub=ai_page),
             Item('Voice', sub=voices_page),
             Item('Spoilers', action=flip('spoilers'), check=lambda: app.cfg['spoilers']),
             Item('Show answers in a box', action=flip('box'), check=lambda: app.cfg['box']),
@@ -545,7 +652,7 @@ def selftest(ci=False):
     if not ci:
         check('sound out', lambda: __import__('sounddevice').query_devices(kind='output')['name'])
     check('sound libs', lambda: (__import__('sounddevice'), __import__('soundfile'))[1].__name__)
-    check('claude code', lambda: 'found' if brain.claude_ok() else 'not installed (first run offers to install it)')
+    check('ai', lambda: (lambda ok, msg: msg if ok or brain.http() else 'Claude Code not installed (first run offers to install it)')(*brain.ready()))
     check('games index', lambda: f'{len(games.build())} games')
     print('SELFTEST', 'PASSED' if ok else 'FAILED', flush=True)
     return 0 if ok else 1
@@ -566,6 +673,7 @@ def already_running():
 def main():
     args = sys.argv[1:]
     cfg = config.load()
+    brain.use(cfg)
     if args[:1] == ['--games']:
         return print('\n'.join(f"{g['name']}  [{g['source']}]  {g['dir']}" for g in games.build()) or 'no games found')
     if args[:1] == ['--selftest']:   # the installed build's smoke test: every native piece loads and works
@@ -587,7 +695,7 @@ def main():
         print(f"[{g['name'] if g else 'no game'}]  {exe}")
         p = brain.start(cfg['deepModel'] if brain.DEEP.search(q) else cfg['model'], cfg['spoilers'])
         if not p:
-            return print('Claude Code not found')
+            return print(brain.ready(cfg)[1])
         t = time.time()
         wiki = '\n\n'.join(x for x in (romm.context(g, q), lookup.wiki(q, g and g['name'], folder=notes.FOLDER, progress=notes.read(g, 3))) if x)
         print(f'(wiki {len(wiki)} chars in {time.time() - t:.1f}s)')
@@ -595,15 +703,16 @@ def main():
         a, learned = brain.split_note(a)
         if learned and g:
             notes.add(g, learned + ' (learned)')
-        return print(f'{a}\n(${usd:.4f}, {time.time() - t:.1f}s)' + (f'\n[noted: {learned}]' if learned else ''))
+        return print(f'{a}\n({brain.name(cfg)}, ${usd:.4f}, {time.time() - t:.1f}s)' + (f'\n[noted: {learned}]' if learned else ''))
     if already_running():
         ctypes = __import__('ctypes')
         ctypes.windll.user32.MessageBoxW(None, 'Lorekeeper is already running: look for the pixel book in your tray '
                                                '(click the ^ arrow by the clock if it is hidden).', 'Lorekeeper', 0x40)
         return
     import box as boxmod, hotkey
-    if not brain.claude_ok():
-        print('Claude Code (claude) is not on PATH: install it and sign in first.', file=sys.stderr)
+    ok, msg = brain.ready(cfg)
+    if not ok:
+        print(msg, file=sys.stderr)
     b = boxmod.Box(cfg['boxSeconds'])
     app = App(cfg, b)
     try:
@@ -632,7 +741,7 @@ def main():
         b.root.after(1500, ask)
     telemetry.start(app.cfg)   # reads the setting live: a later yes in the tray starts the counts
     import firstrun
-    firstrun.run(app, b)   # an installed copy: fetch the voice model, offer to install Claude Code
+    firstrun.run(app, b)   # an installed copy: fetch the voice model, offer to install Claude Code (when it's the AI)
     b.run()
 
 

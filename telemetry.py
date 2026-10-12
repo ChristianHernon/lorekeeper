@@ -1,7 +1,8 @@
 """Anonymous usage counts: how many installs, and how many are used each day. Nothing about play ever leaves.
 
 Sent, to PostHog: a random install id (made here, tied to nothing), the event ("installed" once, "active" at most once a
-day), the app version and commit, the Windows version, and whether listen mode / RomM are on and which voice engine.
+day), the app version and commit, the Windows version, whether listen mode / RomM are on, which voice engine, and which
+kind of AI answers (claude, ollama, lmstudio, openai or custom: never its address or model).
 Never: games, questions, answers, notes, paths, names, hardware. Asked once on first run (nothing is sent before a yes);
 change it any time in the tray ("Share anonymous usage counts") or config.json, or set DO_NOT_TRACK. With no posthogKey
 nothing is sent and nothing is asked.
@@ -80,6 +81,7 @@ def props(cfg):
     os_name, build = _windows()
     return {'version': VERSION, 'commit': _commit(), 'os': os_name, 'os_build': build,
             'listen': bool(cfg.get('listen')), 'romm': bool(cfg.get('rommUrl')), 'voice': cfg.get('voice') or '',
+            'ai': __import__('brain').kind(cfg),
             '$process_person_profile': False, '$geoip_disable': True, '$lib': 'lorekeeper'}
 
 
