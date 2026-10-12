@@ -66,11 +66,13 @@ class Box:
         self.root.bind('<Button-1>', self._copy)
         self.seconds, self.q, self.hide_at, self.blink_at = seconds, queue.Queue(), None, None
         self.question = self.answer = ''
+        self.title = False
         self.root.after(50, self._pump)
 
     # any thread
-    def show(self, question='', answer='', stay=False):
-        self.q.put((question, answer, stay))
+    def show(self, question='', answer='', stay=False, title=False):
+        """title: the first line is Lorekeeper's own heading ("Lorekeeper is ready"), not something the player said."""
+        self.q.put((question, answer, stay, title))
 
     def hide(self):
         self.q.put(None)
@@ -83,9 +85,9 @@ class Box:
                 if item is None:
                     self._withdraw()
                     continue
-                question, answer, stay = item
+                question, answer, stay, title = item
                 if question:
-                    self.question = question
+                    self.question, self.title = question, title
                 self.answer = answer
                 self._draw()
                 self._place()
@@ -131,10 +133,13 @@ class Box:
         if q:
             if state == 'mic':
                 self._pixels(MIC, x0 + PAD, y + 1, 2, {'n': INK, 's': SKY, 'b': '#2f6bff', 'w': INK})
+            elif self.title:   # Lorekeeper's own heading: no YOU tag
+                pass
             else:
                 c.create_text(x0 + PAD, y + 2, text='YOU', font=self.f_tag, fill=PINK, anchor='nw')   # 'YOU ▸', as on the page
                 self._arrow(x0 + PAD + tkfont.Font(font=self.f_tag).measure('YOU') + 5, y + 6, PINK)
-            t = c.create_text(tx, y, text=q, font=self.f_ask, fill=SKY if state else DIM, anchor='nw', width=TEXT_W)
+            t = c.create_text(x0 + PAD if self.title else tx, y, text=q, font=self.f_ask, fill=LILAC if self.title else SKY if state else DIM,
+                              anchor='nw', width=TEXT_W + (tag_w if self.title else 0))
             y = max(c.bbox(t)[3], y + (24 if state == 'mic' else 0)) + 10
         if a:
             c.create_text(x0 + PAD, y + 3, text='LK', font=self.f_tag, fill=SKY, anchor='nw')

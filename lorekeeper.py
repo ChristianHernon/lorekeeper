@@ -83,10 +83,10 @@ class App:
     def box(self):
         return self._box if self.cfg['box'] else None
 
-    def say(self, question, answer):
+    def say(self, question, answer, title=False):
         self.voice.say(answer)
         if self.box:
-            self.box.show(question, answer)
+            self.box.show(question, answer, title=title)
         if self.listener.on:
             self.after_speaking()
 
@@ -111,7 +111,7 @@ class App:
         self.cfg['listen'] = on
         config.save(self.cfg)
         if not quiet:
-            self.say('Listen mode', 'Listening. Say Lorekeeper, then your question.' if on else 'Stopped listening.')
+            self.say('Listen mode', 'Listening. Say Lorekeeper, then your question.' if on else 'Stopped listening.', title=True)
 
     def toggle_listen(self):
         self.set_listen(not self.listener.on)
@@ -339,23 +339,23 @@ def tray(app, box):
         box.quit()
 
     def set_hotkey(*_):
-        box.show('Set the hotkey', 'Press the key, combo or mouse side button you want. Esc to cancel.', stay=True)
+        box.show('Set the hotkey', 'Press the key, combo or mouse side button you want. Esc to cancel.', stay=True, title=True)
 
         def done(combo):
             if combo:
                 app.cfg['hotkey'] = combo
                 config.save(app.cfg)
-            box.show('Hotkey', f"Hold {hotkey.pretty(app.hk.combo)} and ask." if combo else 'Unchanged.')
+            box.show('Hotkey', f"Hold {hotkey.pretty(app.hk.combo)} and ask." if combo else 'Unchanged.', title=True)
         app.hk.record(done)
 
     def set_listen_key(*_):
-        box.show('Set the listen key', 'Press the key or combo that turns listen mode on and off. Esc to cancel.', stay=True)
+        box.show('Set the listen key', 'Press the key or combo that turns listen mode on and off. Esc to cancel.', stay=True, title=True)
 
         def done(combo):
             if combo:
                 app.cfg['listenKey'] = combo
                 config.save(app.cfg)
-            box.show('Listen key', f"{hotkey.pretty(app.lk.combo)} turns listen mode on and off." if combo else 'Unchanged.')
+            box.show('Listen key', f"{hotkey.pretty(app.lk.combo)} turns listen mode on and off." if combo else 'Unchanged.', title=True)
         app.lk.record(done)
 
     def connect_romm(*_):
@@ -367,12 +367,12 @@ def tray(app, box):
                 return
 
             def on_code(code, approve):
-                box.show('Connect RomM', f'Approve code {code} in RomM. Opening it in your browser…', stay=True)
+                box.show('Connect RomM', f'Approve code {code} in RomM. Opening it in your browser…', stay=True, title=True)
                 os.startfile(approve)
 
             def on_done(user, err):
                 app.cfg['rommUrl'] = romm.url() or app.cfg.get('rommUrl', '')
-                box.show('RomM', f'Connected as {user}. Play from RomM or an emulator and just ask.' if user else err)
+                box.show('RomM', f'Connected as {user}. Play from RomM or an emulator and just ask.' if user else err, title=True)
                 app.voice.say('RomM connected.' if user else err)
             romm.pair(addr, on_code, on_done)
         box.root.after(0, ask)
@@ -383,7 +383,7 @@ def tray(app, box):
         cfg = config.load()
         cfg.pop('rommUrl', None)
         config.save(cfg)
-        box.show('RomM', 'Disconnected. Remove the "Lorekeeper" device in RomM to revoke it there too.')
+        box.show('RomM', 'Disconnected. Remove the "Lorekeeper" device in RomM to revoke it there too.', title=True)
 
     def use_voice(v):
         def do(*_):
@@ -480,7 +480,7 @@ def main():
     threading.Thread(target=lk.run, daemon=True).start()
     tray(app, b)
     import telemetry
-    b.show('Lorekeeper is ready', f"Hold {hotkey.pretty(hk.combo)} in a game and ask." + (f" Playing {app.game['name']}." if app.game else ''))
+    b.show('Lorekeeper is ready', f"Hold {hotkey.pretty(hk.combo)} in a game and ask." + (f" Playing {app.game['name']}." if app.game else ''), title=True)
     if telemetry.should_ask(app.cfg):   # first run: ask once; nothing is sent before a yes
         def ask():
             from tkinter import messagebox
