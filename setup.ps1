@@ -9,6 +9,7 @@ foreach ($f in 'kokoro-v1.0.int8.onnx', 'voices-v1.0.bin') {   # the offline voi
 }
 $lnk = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Lorekeeper.lnk"
 $s = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
-$s.TargetPath = "$here\.venv\Scripts\pythonw.exe"; $s.Arguments = "`"$here\lorekeeper.py`""; $s.WorkingDirectory = $here; $s.Save()
+$s.TargetPath = "$here\.venv\Scripts\pythonw.exe"; $s.Arguments = "`"$here\lorekeeper.py`""; $s.WorkingDirectory = $here
+$s.IconLocation = "$here\assets\lorekeeper.ico,0"; $s.Save()
 if (-not (Get-Command claude -ErrorAction SilentlyContinue)) { Write-Warning "Claude Code not found: install it (https://claude.com/claude-code) and run 'claude' once to sign in." }
 Write-Host "Done. Start Lorekeeper from the Start menu, or run Lorekeeper.cmd."
