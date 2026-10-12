@@ -1,6 +1,7 @@
 """Step 2 of the demo: voice script.json (player: a second Kokoro voice; Lorekeeper: its real voice), draw 8-bit frames in
 time with the speech, and encode docs/demo.mp4. No game footage: games appear by name only.
-  python demo/make_video.py            -> docs/demo.mp4 (1280x720, 30 fps)
+  python demo/make_video.py            -> docs/demo-full.mp4 (every scene; 1280x720, 30 fps)
+  python demo/make_video.py --level lore|gear|clip   -> docs/demo-<level>.mp4: one stage of the site's level select
 Needs: kokoro-onnx + model (setup.ps1), pillow, numpy, imageio-ffmpeg."""
 import json, os, random, subprocess, sys, textwrap
 import numpy as np
@@ -13,6 +14,11 @@ import config  # noqa: E402
 
 W, H, FPS, SR = 1280, 720, 30, 24000
 PLAYER_VOICE = 'am_michael'
+LEVELS = {   # the site's level select: number, name, scenes
+    'lore': ('1-1', 'LORE & INFO', ['Enter the Gungeon', 'The Witcher 3: Wild Hunt']),
+    'gear': ('1-2', 'GEAR CHECK', ['Diablo IV']),
+    'clip': ('1-3', 'CLIP IT', ['Any game']),
+}
 LK_VOICE = config.DEFAULTS['kokoroVoice']
 NIGHT, NIGHT2, INK, DIM, SKY, PINK, GOLD, CRIMSON, PURPLE = ((11, 11, 43), (36, 16, 80), (242, 239, 230), (170, 165, 200), (73, 198, 255),
                                                              (255, 138, 164), (255, 210, 63), (224, 40, 79), (122, 60, 255))
@@ -154,6 +160,9 @@ def scene_frame(base, mascot, s, held, q_chars, a_chars, status, flash=0.0):
 
 def main():
     script = json.load(open(os.path.join(HERE, 'script.json'), encoding='utf-8'))
+    level = sys.argv[sys.argv.index('--level') + 1] if '--level' in sys.argv else ''
+    if level:
+        script = [s for s in script if s['game'] in LEVELS[level][2]]
     import answers
     for s in script:   # the gear scene shows the screenshot it was asked about
         s['shot'] = None
@@ -176,7 +185,23 @@ def main():
         snd = sound if sound is not None else silence(seconds)
         audio.append(np.pad(snd, (0, max(0, int(n / FPS * SR) - len(snd))))[:int(n / FPS * SR)])
 
-    add(2.6, lambda f: scanlines(card))
+    if level:   # a level card, like a stage intro
+        num, name, _ = LEVELS[level]
+
+        def intro(f):
+            img = base.copy()
+            d = ImageDraw.Draw(img)
+            big = book.resize((int(book.width * 120 / book.height), 120), Image.NEAREST)
+            img.paste(big, ((W - big.width) // 2, 150))
+            for text, font, fill, y, depth in [(f'LEVEL {num}', PS(30), GOLD, 320, 3), (name, PS(52), INK, 380, 4)]:
+                shadow_text(d, ((W - font.getlength(text)) / 2, y), text, font, fill, depth)
+            if (f // 10) % 2 == 0:
+                t = 'READY?'
+                d.text(((W - VT(40).getlength(t)) / 2, 480), t, font=VT(40), fill=SKY)
+            return scanlines(img)
+        add(1.8, intro)
+    else:
+        add(2.6, lambda f: scanlines(card))
     for s in script:
         add(0.5, lambda f, s=s: scene_frame(base, mascot, s, False, 0, 0, ''))
         qa = say(s['q'], PLAYER_VOICE, 'en-us')
@@ -205,14 +230,14 @@ def main():
             x = (W - font.getlength(text)) / 2
             (shadow_text(d, (x, y), text, font, fill, 4) if font.size == 56 else d.text((x, y), text, font=font, fill=fill))
         return scanlines(img)
-    add(4.0, outro)
+    add(3.0 if level else 4.0, outro)
 
     import imageio_ffmpeg
     track = np.concatenate(audio)
     wav = os.path.join(HERE, 'demo.wav')
     import soundfile
     soundfile.write(wav, track, SR)
-    out = os.path.join(ROOT, 'docs', 'demo.mp4')
+    out = os.path.join(ROOT, 'docs', f'demo-{level}.mp4' if level else 'demo-full.mp4')
     p = subprocess.Popen([imageio_ffmpeg.get_ffmpeg_exe(), '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}',
                           '-r', str(FPS), '-i', '-', '-i', wav, '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-tune', 'animation',
                           '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-shortest', '-movflags', '+faststart', out],

@@ -7,11 +7,14 @@
 
 <p align="center">
   <img alt="Windows" src="https://img.shields.io/badge/Windows_10%20%7C%2011-0b0b2b?style=for-the-badge&logo=windows11&logoColor=49c6ff">
+  <img alt="Mac coming soon" src="https://img.shields.io/badge/Mac-coming_soon-3b1f6e?style=for-the-badge&logo=apple&logoColor=f2efe6">
   <img alt="Python" src="https://img.shields.io/badge/Python_3.10+-3b1f6e?style=for-the-badge&logo=python&logoColor=f2efe6">
   <img alt="Claude" src="https://img.shields.io/badge/Claude_Pro%20%7C%20Max-7a3cff?style=for-the-badge&logo=anthropic&logoColor=f2efe6">
   <img alt="Cost" src="https://img.shields.io/badge/~0.1%C2%A2_per_ask-e0284f?style=for-the-badge">
   <img alt="Offline voice" src="https://img.shields.io/badge/voice-offline-2f6bff?style=for-the-badge">
 </p>
+
+<p align="center"><sub><b>WORKS WITH</b> &nbsp; Steam &middot; Epic Games &middot; GOG &middot; RomM &middot; RetroArch &amp; emulators &middot; Xbox Game Bar &middot; plays nice with Discord voice chat</sub></p>
 
 <p align="center"><b><a href="https://lorekeeper-cgv.pages.dev/">Website</a></b> &nbsp;·&nbsp; <a href="#install">Install</a> &nbsp;·&nbsp; <a href="#just-ask">Examples</a> &nbsp;·&nbsp; <a href="#settings">Settings</a></p>
 
@@ -60,7 +63,7 @@
 
 ## Install
 
-You need **Windows 10 or 11**, **Python 3.10+**, and [**Claude Code**](https://claude.com/claude-code) signed in to a Claude Pro or Max plan.
+You need **Windows 10 or 11** (Mac is coming soon), **Python 3.10+**, and [**Claude Code**](https://claude.com/claude-code) signed in to a Claude Pro or Max plan.
 
 ```powershell
 git clone https://github.com/FindlayHi/lorekeeper

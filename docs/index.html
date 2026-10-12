@@ -346,18 +346,41 @@ footer p { margin: 0; }
 }
 
 /* Easter egg: Ctrl+Alt+Space (or clicking the hint) unlocks the demo */
-.egg-trigger { background: none; border: 0; cursor: pointer; padding: 6px 8px; }
-.egg-trigger:hover .k, .egg-trigger:focus-visible .k { color: #fff; text-shadow: 0 0 8px #ffd23f; }
+.soon { color: #ffd23f; }
+.book-wrap { position: relative; display: inline-block; }
+.book-play { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); display: flex; flex-direction: column;
+  align-items: center; gap: 8px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink); }
+.play-tri { width: 64px; height: 64px; background: var(--crimson); position: relative;
+  box-shadow: 0 -4px 0 0 var(--ink), 0 4px 0 0 var(--ink), -4px 0 0 0 var(--ink), 4px 0 0 0 var(--ink), 8px 8px 0 0 var(--shadow); }
+.play-tri::after { content: ""; position: absolute; left: 24px; top: 16px; width: 24px; height: 32px; background: #fff;
+  clip-path: polygon(0 0, 25% 0, 25% 12.5%, 50% 12.5%, 50% 25%, 75% 25%, 75% 37.5%, 100% 37.5%, 100% 62.5%, 75% 62.5%, 75% 75%, 50% 75%, 50% 87.5%, 25% 87.5%, 25% 100%, 0 100%); }
+.play-label { font-family: var(--heading); font-size: 10px; letter-spacing: 1px; background: var(--night); padding: 5px 8px;
+  box-shadow: 0 0 0 3px var(--ink); }
+.book-play:hover .play-tri, .book-play:focus-visible .play-tri { background: #ff3d68; transform: translate(-2px, -2px); }
+.book-play:hover .play-label, .book-play:focus-visible .play-label { color: #ffd23f; }
+.book-play:focus-visible { outline: none; }
+.book-play:focus-visible .play-tri { outline: 3px solid #ffd23f; outline-offset: 4px; }
+.egg.plain .egg-nest, .egg.plain .egg-banner .star { display: none; }
 .egg-flash { position: fixed; inset: 0; z-index: 90; background: #fff; pointer-events: none; animation: eggflash .45s steps(3) forwards; }
 @keyframes eggflash { from { opacity: .9; } to { opacity: 0; } }
-.egg { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center; padding: 16px;
-  background: rgba(5, 5, 32, .88); }
+.egg { position: fixed; inset: 0; z-index: 80; display: none; align-items: safe center; justify-content: center; padding: 16px; overflow-y: auto;
+  background: rgba(5, 5, 32, .94); }
 .egg.open { display: flex; }
-.egg-inner { position: relative; width: min(960px, 100%, calc((100vh - 250px) * 16 / 9)); text-align: center; }
+.egg-inner { position: relative; width: min(960px, 100%, calc((100vh - 290px) * 16 / 9)); min-width: min(320px, 100%); text-align: center; margin: auto; }
 .egg-banner { font-family: var(--heading); font-size: clamp(14px, 2.6vw, 24px); color: #ffd23f; margin: 0 0 6px;
   text-shadow: 3px 3px 0 var(--crimson-dark), 6px 6px 0 var(--shadow); animation: eggpop .5s steps(4) both; }
 .egg-sub { font-family: var(--pixel); font-size: 1.5rem; color: var(--sky); margin: 0 0 18px; }
-.egg-book { width: 120px; image-rendering: pixelated; margin: 0 auto 8px; display: block; animation: eggbook 1s steps(6) both; }
+.egg-nest { position: relative; width: 120px; margin: 52px auto 8px; }
+.egg-book { width: 120px; image-rendering: pixelated; display: block; animation: eggbook 1s steps(6) both; }
+.egg-egg { position: absolute; left: 50%; top: -50px; width: 54px; margin-left: -27px; padding: 0; border: 0; background: none; cursor: pointer;
+  transform-origin: 50% 90%; animation: egghop .7s steps(5) .55s both, eggwobble 1.2s steps(4) 1.3s infinite; }
+.egg-egg img { width: 54px; height: 63px; image-rendering: pixelated; display: block; filter: drop-shadow(3px 3px 0 var(--shadow)); }
+.egg-egg:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
+.egg-egg.hop { animation: egghop .6s steps(5) both; }
+@keyframes egghop { 0% { transform: translateY(34px) scale(.3); opacity: 0; } 50% { transform: translateY(-22px) scale(1.1); opacity: 1; } 100% { transform: none; } }
+@keyframes eggwobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-9deg); } 75% { transform: rotate(9deg); } }
+.egg-more { margin: 14px 0 0; font-size: .95rem; color: var(--ink-dim); }
+.egg-more a { color: var(--sky); }
 @keyframes eggpop { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes eggbook { 0% { transform: translateY(40px) scale(.4); } 60% { transform: translateY(-14px) scale(1.15); } 100% { transform: none; } }
 .egg-player { --bc: var(--sky); --bg: #050520; padding: 0; line-height: 0; }
@@ -367,7 +390,37 @@ footer p { margin: 0; }
 .egg-close:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
 .spark { position: fixed; z-index: 85; width: 8px; height: 8px; pointer-events: none; animation: spark .9s steps(6) forwards; }
 @keyframes spark { to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .egg-flash, .spark { display: none; } .egg-banner, .egg-book { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .egg-flash, .spark { display: none; } .egg-banner, .egg-book, .egg-egg, .egg-egg.hop { animation: none; } }
+
+.levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin: 8px 0 0; }
+.level { --bc: var(--purple-text); --bg: #0d0b38; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 20px 14px 18px; color: var(--ink); cursor: pointer; border: 0; font: inherit; text-align: center;
+  transition: transform .08s steps(1); }
+.level img { width: 40px; height: 40px; image-rendering: pixelated; }
+.level:hover, .level:focus-visible { --bc: #ffd23f; transform: translate(-2px, -2px); outline: none; }
+.level:focus-visible .lv-name, .level:hover .lv-name { color: #ffd23f; }
+.lv-num { font-family: var(--pixel); font-size: 1.4rem; color: var(--sky); line-height: 1; }
+.lv-name { font-family: var(--heading); font-size: 13px; line-height: 1.4; }
+.lv-what { font-size: .9rem; color: var(--ink-dim); line-height: 1.35; }
+.lv-len { font-family: var(--pixel); font-size: 1.15rem; color: #ffd23f; }
+.lv-rec { width: 40px; height: 40px; display: grid; place-items: center; }
+.lv-rec::before { content: ""; width: 22px; height: 22px; background: var(--crimson);
+  clip-path: polygon(30% 0, 70% 0, 70% 15%, 85% 15%, 85% 30%, 100% 30%, 100% 70%, 85% 70%, 85% 85%, 70% 85%, 70% 100%, 30% 100%, 30% 85%, 15% 85%, 15% 70%, 0 70%, 0 30%, 15% 30%, 15% 15%, 30% 15%); }
+.egg-back { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; font-family: var(--heading); font-size: 11px;
+  color: var(--ink); background: var(--indigo); border: 0; padding: 10px 14px; cursor: pointer; box-shadow: 4px 4px 0 var(--shadow); }
+.egg-back:hover, .egg-back:focus-visible { color: #ffd23f; outline: none; }
+.arr-back { transform: scaleX(-1); }
+@media (max-width: 640px) { .levels { grid-template-columns: 1fr; gap: 16px; } .level { flex-direction: row; text-align: left; flex-wrap: wrap; }
+  .lv-what { flex-basis: 100%; } }
+
+.works { padding-top: 0 !important; padding-bottom: 8px !important; }
+.works-title { font-family: var(--pixel); font-size: 1.5rem; color: var(--sky); margin: 0 0 14px; letter-spacing: .08em; text-shadow: none; }
+.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 14px 16px; }
+.chip { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; background: #0d0b38;
+  box-shadow: 0 -3px 0 0 var(--purple-text), 0 3px 0 0 var(--purple-text), -3px 0 0 0 var(--purple-text), 3px 0 0 0 var(--purple-text), 5px 6px 0 0 var(--shadow); margin: 3px; }
+.chip b { font-family: var(--heading); font-size: 11px; font-weight: 400; color: var(--ink); letter-spacing: .5px; }
+.chip span { font-size: .85rem; color: var(--ink-dim); }
+@media (max-width: 560px) { .chips { gap: 12px; } .chip { flex: 1 1 100%; } }
 </style>
 </head>
 <body>
@@ -390,7 +443,7 @@ footer p { margin: 0; }
 <main id="main">
   <div class="wrap hero" id="top">
     <div>
-      <p class="kicker">A voice companion for PC games &middot; Windows</p>
+      <p class="kicker">A voice companion for PC games &middot; Windows &middot; <span class="soon">Mac coming soon</span></p>
       <h1><span>Hold a key.</span><span class="c2">Ask out loud.</span><span class="c3">Hear the answer.</span></h1>
       <p class="lede">Lorekeeper <strong>knows which game you're in</strong> and answers in your ear: lore, quest steps, items and builds, even clipping the moment. All <strong>without spoilers</strong>, and no alt-tabbing.</p>
       <div class="ctas">
@@ -399,10 +452,26 @@ footer p { margin: 0; }
       </div>
     </div>
     <div class="stage">
-      <img class="mascot" src="img/book.svg" alt="Pixel-art open book, the Lorekeeper mascot" width="320" height="240">
-      <button class="press egg-trigger" type="button" aria-haspopup="dialog" aria-controls="egg">PRESS <span class="k blink">CTRL+ALT+SPACE</span></button>
+      <div class="book-wrap">
+        <img class="mascot" src="img/book.svg" alt="Pixel-art open book, the Lorekeeper mascot" width="320" height="240">
+        <button class="book-play" type="button" aria-haspopup="dialog" aria-controls="egg"><span class="play-tri" aria-hidden="true"></span><span class="play-label">WATCH DEMO</span></button>
+      </div>
+      <p class="press">PRESS <span class="k blink">CTRL+ALT+SPACE</span></p>
     </div>
   </div>
+
+  <section class="wrap works" aria-labelledby="works-title">
+    <h2 class="works-title" id="works-title">WORKS WITH</h2>
+    <ul class="chips">
+      <li class="chip"><b>Steam</b><span>finds your games &middot; clips with Steam's recorder</span></li>
+      <li class="chip"><b>Epic Games</b><span>finds your games</span></li>
+      <li class="chip"><b>GOG</b><span>finds your games</span></li>
+      <li class="chip"><b>RomM</b><span>your retro library, walkthroughs and notes</span></li>
+      <li class="chip"><b>RetroArch &amp; emulators</b><span>Dolphin, DuckStation, PCSX2, PPSSPP&hellip;</span></li>
+      <li class="chip"><b>Xbox Game Bar</b><span>clips</span></li>
+      <li class="chip"><b>Discord</b><span>plays nice with voice chat: it only answers to its name</span></li>
+    </ul>
+  </section>
 
   <section id="how" class="wrap" aria-labelledby="how-title">
     <h2 class="sec-title" id="how-title">How it works</h2>
@@ -473,7 +542,7 @@ footer p { margin: 0; }
       <div class="req px">
         <h3>Requirements</h3>
         <ul>
-          <li>Windows 10 or 11</li>
+          <li>Windows 10 or 11 <span class="soon">(Mac coming soon)</span></li>
           <li>Python 3.10+</li>
           <li>Claude Code, signed in to a Pro or Max plan</li>
         </ul>
@@ -509,12 +578,33 @@ footer p { margin: 0; }
 <div class="egg" id="egg" role="dialog" aria-modal="true" aria-labelledby="egg-title" hidden>
   <div class="egg-inner">
     <button class="egg-close" type="button" aria-label="Close the demo">X</button>
-    <img class="egg-book" src="img/book.svg" alt="" width="120" height="90">
-    <p class="egg-banner" id="egg-title">&#9733; SECRET FOUND &#9733;</p>
-    <p class="egg-sub">You pressed the key. Here's what happens in game.</p>
-    <div class="egg-player px">
-      <video id="egg-video" src="demo.mp4" poster="og/discord.png" controls playsinline preload="none"></video>
+    <div class="egg-nest">
+      <img class="egg-book" src="img/book.svg" alt="" width="120" height="90">
+      <button class="egg-egg" type="button" aria-label="An Easter egg. Poke it."><img src="img/egg.svg" alt="" width="54" height="63"></button>
     </div>
+    <p class="egg-banner" id="egg-title"><span class="star">&#9733; </span><span id="egg-title-text">SECRET FOUND</span><span class="star"> &#9733;</span></p>
+    <p class="egg-sub" id="egg-sub">Choose your level.</p>
+    <div class="levels" id="levels" role="group" aria-label="Choose a demo">
+      <button class="level px" type="button" data-level="lore" data-len="0:49">
+        <img src="img/scroll.svg" alt="" width="40" height="40"><span class="lv-num">1-1</span>
+        <span class="lv-name">LORE &amp; INFO</span><span class="lv-what">Gungeon flavor text, a Witcher 3 quest choice</span><span class="lv-len">0:49</span>
+      </button>
+      <button class="level px" type="button" data-level="gear" data-len="0:35">
+        <img src="img/pad.svg" alt="" width="40" height="40"><span class="lv-num">1-2</span>
+        <span class="lv-name">GEAR CHECK</span><span class="lv-what">Diablo IV: is this better than my helm?</span><span class="lv-len">0:35</span>
+      </button>
+      <button class="level px" type="button" data-level="clip" data-len="0:09">
+        <span class="lv-rec" aria-hidden="true"></span><span class="lv-num">1-3</span>
+        <span class="lv-name">CLIP IT</span><span class="lv-what">Save the last 30 seconds, hands free</span><span class="lv-len">0:09</span>
+      </button>
+    </div>
+    <div class="egg-stage" id="egg-stage" hidden>
+      <button class="egg-back" type="button"><span class="arr arr-back" aria-hidden="true"></span>LEVEL SELECT</button>
+      <div class="egg-player px">
+        <video id="egg-video" poster="og/discord.png" controls playsinline preload="none"></video>
+      </div>
+    </div>
+    <p class="egg-more"><a href="demo-full.mp4">Watch the full demo (1:25)</a></p>
   </div>
 </div>
 <script>
@@ -578,19 +668,44 @@ footer p { margin: 0; }
       setTimeout(function (el) { el.remove(); }, 950, s);
     }
   }
-  function open() {
+  function open(plain) {   // plain: the WATCH DEMO button. The full easter egg is only for pressing the keys.
     if (egg.classList.contains('open')) return;
+    plain = plain === true;
     last = document.activeElement;
-    if (!reduce) {
+    egg.classList.toggle('plain', plain);
+    document.getElementById('egg-title-text').textContent = plain ? 'CHOOSE YOUR LEVEL' : 'SECRET FOUND';
+    if (!plain && !reduce) {
       var f = document.createElement('div'); f.className = 'egg-flash'; document.body.appendChild(f);
       setTimeout(function () { f.remove(); }, 500);
     }
-    var m = document.querySelector('.mascot').getBoundingClientRect();
-    sparks(m.left + m.width / 2, m.top + m.height / 2);
+    if (!plain) { var m = document.querySelector('.mascot').getBoundingClientRect(); sparks(m.left + m.width / 2, m.top + m.height / 2); }
     egg.hidden = false; egg.classList.add('open');
     egg.querySelector('.egg-close').focus();
-    try { video.currentTime = 0; var p = video.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+    showLevels();
+    setTimeout(function () { var first = egg.querySelector('.level'); if (first) first.focus(); }, 60);
   }
+  var levels = document.getElementById('levels'), stage = document.getElementById('egg-stage'), sub = document.getElementById('egg-sub');
+  var names = { lore: 'LEVEL 1-1: LORE & INFO', gear: 'LEVEL 1-2: GEAR CHECK', clip: 'LEVEL 1-3: CLIP IT' };
+  function showLevels() {
+    try { video.pause(); } catch (e) {}
+    stage.hidden = true; levels.hidden = false; sub.textContent = egg.classList.contains('plain') ? 'Pick one. Each is under a minute.' : 'Choose your level.';
+  }
+  function play(level) {
+    levels.hidden = true; stage.hidden = false; sub.textContent = names[level];
+    video.src = 'demo-' + level + '.mp4';
+    stage.querySelector('.egg-back').focus();
+    try { var p = video.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+  }
+  egg.querySelectorAll('.level').forEach(function (b, i, all) {
+    b.addEventListener('click', function () { play(b.dataset.level); });
+    b.addEventListener('keydown', function (e) {   // arrow keys move between levels, like a level select
+      var d = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ? -1 : 0;
+      if (d) { e.preventDefault(); all[(i + d + all.length) % all.length].focus(); }
+    });
+  });
+  stage.querySelector('.egg-back').addEventListener('click', function () {
+    showLevels(); var cur = egg.querySelector('.level[data-level="' + (video.src.match(/demo-(\w+)\.mp4/) || [])[1] + '"]'); if (cur) cur.focus();
+  });
   function close() {
     egg.classList.remove('open'); egg.hidden = true;
     try { video.pause(); } catch (e) {}
@@ -600,8 +715,14 @@ footer p { margin: 0; }
     if (e.ctrlKey && e.altKey && (e.code === 'Space' || e.key === ' ')) { e.preventDefault(); open(); }
     else if (e.key === 'Escape' && egg.classList.contains('open')) close();
   });
-  document.querySelector('.egg-trigger').addEventListener('click', open);
+  document.querySelector('.book-play').addEventListener('click', function () { open(true); });
   egg.querySelector('.egg-close').addEventListener('click', close);
+  var shell = egg.querySelector('.egg-egg');   // poke the egg: it hops again, with sparks
+  shell.addEventListener('click', function () {
+    shell.classList.remove('hop'); void shell.offsetWidth; shell.classList.add('hop');
+    var r = shell.getBoundingClientRect(); sparks(r.left + r.width / 2, r.top + r.height / 2);
+  });
+  shell.addEventListener('animationend', function (e) { if (e.animationName === 'egghop') shell.classList.remove('hop'); });
   egg.addEventListener('click', function (e) { if (e.target === egg) close(); });
 })();
 </script>
