@@ -308,14 +308,7 @@ class App:
 
 
 def tray(app, box):
-    import hotkey, pystray
-    from PIL import Image, ImageDraw
-    img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.rounded_rectangle((6, 10, 58, 54), 8, fill=(196, 160, 82))
-    d.rectangle((31, 12, 33, 52), fill=(22, 22, 28))
-    d.line((14, 22, 26, 22), fill=(22, 22, 28), width=3)
-    d.line((38, 22, 50, 22), fill=(22, 22, 28), width=3)
+    import art, hotkey, pystray
 
     def pin_to(g):
         def do(*_):
@@ -425,8 +418,14 @@ def tray(app, box):
         pystray.MenuItem('Settings file', lambda *_: (config.save(app.cfg), os.startfile(config.FILE))),
         pystray.MenuItem('Ask log', lambda *_: os.path.exists(LOG) and os.startfile(LOG)),
         pystray.MenuItem('Quit', quit_))
-    icon = pystray.Icon('Lorekeeper', img, 'Lorekeeper', menu)
+    icon = art.tray_icon(pystray, 'Lorekeeper', 'Lorekeeper', menu)   # the pixel book; its cover turns blue in listen mode
     icon.run_detached()
+
+    def watch_listen():   # listen mode flips from the menu, the listen key and startup, so follow the listener itself
+        while True:
+            icon.listening = app.listener.on
+            time.sleep(0.5)
+    threading.Thread(target=watch_listen, daemon=True).start()
     return icon
 
 
