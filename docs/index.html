@@ -175,7 +175,7 @@ h1 .c3 { color: #ff8aa4; }
 .ctas { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
 .btn {
   --bc: var(--ink);
-  display: inline-block; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
   font-family: var(--heading); font-size: 12px; line-height: 1.5; letter-spacing: .5px;
   padding: 14px 18px; color: var(--ink);
   transition: transform .08s steps(1);
@@ -183,6 +183,12 @@ h1 .c3 { color: #ff8aa4; }
 .btn.primary { --bg: var(--crimson); --bc: var(--ink); color: #fff; }
 .btn.secondary { --bg: var(--indigo); --bc: var(--purple-text); }
 .btn:hover { transform: translate(-2px, -2px); color: #fff; }
+/* Pixel "play" arrow: the font has no ▶, so it's drawn, sized and centred with the label */
+.arr {
+  flex: none; width: 8px; height: 14px; background: currentColor; margin-top: -1px;
+  clip-path: polygon(0 0, 25% 0, 25% 14.3%, 50% 14.3%, 50% 28.6%, 75% 28.6%, 75% 42.9%, 100% 42.9%, 100% 57.1%,
+                     75% 57.1%, 75% 71.4%, 50% 71.4%, 50% 85.7%, 25% 85.7%, 25% 100%, 0 100%);
+}
 .btn:active { transform: translate(4px, 4px); }
 
 .stage { display: flex; flex-direction: column; align-items: center; gap: 22px; }
@@ -290,10 +296,11 @@ kbd {
 pre { margin: 0; padding: 18px 18px 20px; overflow-x: auto; }
 pre code { font-family: var(--mono); font-size: .98rem; color: var(--ink); line-height: 1.8; }
 pre .p { color: var(--purple-text); user-select: none; }
-.after { margin: 18px 4px 0; color: var(--ink-dim); font-size: 1rem; }
+.after { margin: 24px 4px 0; color: var(--ink-dim); font-size: 1rem; }
 
 /* Final CTA + footer */
-.final { text-align: center; padding: 64px 0 40px; }
+.final { text-align: center; }
+.wrap.final { padding-top: 64px; padding-bottom: 80px; }
 .final h2 { font-size: clamp(1rem, 3vw, 1.5rem); margin: 0 0 14px; text-shadow: 4px 4px 0 var(--shadow); }
 .final p { color: var(--ink-dim); margin: 0 auto 28px; max-width: 32em; }
 footer {
@@ -310,7 +317,10 @@ footer p { margin: 0; }
   .install-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
-  .hero { grid-template-columns: 1fr; padding-top: 24px; gap: 28px; }
+  .wrap.top { padding-top: 22px; padding-bottom: 6px; row-gap: 14px; }
+  .top nav { gap: 10px 16px; }
+  .hero { grid-template-columns: 1fr; gap: 32px; }
+  .wrap.hero { padding-top: 40px; }
   .stage { order: -1; }
   .mascot { width: min(220px, 60vw); }
   .dialog table, .dialog tbody, .dialog tr, .dialog th[scope="row"], .dialog td { display: block; width: auto; }
@@ -319,16 +329,19 @@ footer p { margin: 0; }
 }
 @media (max-width: 560px) {
   body { font-size: 1.0625rem; }
-  .wrap { padding: 0 16px; }
+  .wrap { padding-left: 16px; padding-right: 16px; }
   .steps { grid-template-columns: 1fr; gap: 34px; }
   .top nav a { font-size: 1.3rem; }
   .brand { font-size: 12px; }
   .press { font-size: 10px; }
-  .btn { font-size: 11px; padding: 12px 14px; }
+  .btn { font-size: 11px; padding: 13px 16px; }
+  .arr { width: 7px; height: 12px; }
+  .wrap.final { padding-top: 52px; padding-bottom: 72px; }
+  .final p { margin-bottom: 32px; }
   .dialog th[scope="row"], .dialog td { padding-left: 16px; padding-right: 16px; }
   .dialog-head { padding-left: 16px; padding-right: 16px; }
   section.wrap { padding-top: 44px; padding-bottom: 44px; }
-  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre { white-space: pre-wrap; overflow-wrap: normal; }   /* the clone URL wraps only at its slashes (<wbr>), never mid-word */
   pre code { font-size: .9rem; }
 }
 </style>
@@ -357,7 +370,7 @@ footer p { margin: 0; }
       <h1><span>Hold a key.</span><span class="c2">Ask out loud.</span><span class="c3">Hear the answer.</span></h1>
       <p class="lede">Lorekeeper <strong>knows which game you're in</strong>, reads that game's wiki, and answers in your ear, <strong>without spoilers</strong>. No alt-tabbing, no scrolling past the ending to find one item.</p>
       <div class="ctas">
-        <a class="btn px primary" href="#install">&#9654; Install</a>
+        <a class="btn px primary" href="#install"><span class="arr" aria-hidden="true"></span>Install</a>
         <a class="btn px secondary" href="https://github.com/FindlayHi/lorekeeper">View on GitHub</a>
       </div>
     </div>
@@ -444,7 +457,7 @@ footer p { margin: 0; }
       <div>
         <div class="code px">
           <div class="code-bar"><span>PowerShell</span><button class="copy" type="button" data-copy="install-cmd" aria-label="Copy install commands">COPY</button></div>
-          <pre><code id="install-cmd"><span class="p" aria-hidden="true">&gt; </span>git clone https://github.com/FindlayHi/lorekeeper
+          <pre><code id="install-cmd"><span class="p" aria-hidden="true">&gt; </span>git clone https://<wbr>github.com/<wbr>FindlayHi/<wbr>lorekeeper
 <span class="p" aria-hidden="true">&gt; </span>cd lorekeeper
 <span class="p" aria-hidden="true">&gt; </span>.\setup.ps1</code></pre>
         </div>
@@ -457,7 +470,7 @@ footer p { margin: 0; }
   <div class="wrap final">
     <h2>Ready, player one?</h2>
     <p>Free, open source, and runs on the Claude plan you already have.</p>
-    <a class="btn px primary" href="https://github.com/FindlayHi/lorekeeper">&#9654; Get Lorekeeper</a>
+    <a class="btn px primary" href="https://github.com/FindlayHi/lorekeeper"><span class="arr" aria-hidden="true"></span>Get Lorekeeper</a>
   </div>
 </main>
 
