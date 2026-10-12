@@ -54,6 +54,78 @@ Filename: "{sys}\taskkill.exe"; Parameters: "/IM Lorekeeper.exe /F"; Flags: runh
 WelcomeLabel2=This installs Lorekeeper, a voice companion for PC games: hold a key in a game, ask out loud, hear the answer.%n%nYou'll need a Claude Pro or Max plan. If Claude Code isn't installed yet, Lorekeeper offers to set it up the first time it starts.
 
 [Code]
+// Anonymous usage counts: asked here, once, with nothing pre-selected. The answer goes into %APPDATA%\Lorekeeper\config.json,
+// so the app doesn't ask again. Skipped when it was answered before (an upgrade); silent installs leave it to the app.
+var
+  UsagePage: TInputOptionWizardPage;
+
+function ConfigPath(): String;
+begin
+  Result := ExpandConstant('{userappdata}\Lorekeeper\config.json');
+end;
+
+function UsageAnswered(): Boolean;
+var
+  S: AnsiString;
+begin
+  Result := LoadStringFromFile(ConfigPath(), S) and (Pos('"telemetry"', S) > 0);
+end;
+
+procedure InitializeWizard();
+begin
+  UsagePage := CreateInputOptionPage(wpSelectTasks, 'Anonymous usage counts',
+    'Help show how many people use Lorekeeper?',
+    'If you share, Lorekeeper sends a random id, the app and Windows version, and which features are on (listen mode, RomM, '
+    + 'the voice engine), so its maker can see how many people use it. Never your games, questions, answers or anything you say, '
+    + 'and IP addresses aren''t kept. You can change this any time in the tray.',
+    True, False);
+  UsagePage.Add('Share anonymous usage counts');
+  UsagePage.Add('Don''t share');
+  UsagePage.Values[0] := False;
+  UsagePage.Values[1] := False;
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := (PageID = UsagePage.ID) and UsageAnswered();
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+  if (CurPageID = UsagePage.ID) and not (UsagePage.Values[0] or UsagePage.Values[1]) then
+  begin
+    MsgBox('Please choose one: share anonymous usage counts, or don''t.', mbInformation, MB_OK);
+    Result := False;
+  end;
+end;
+
+procedure SaveUsageChoice();
+var
+  S: AnsiString;
+  V: String;
+  P: Integer;
+begin
+  if not (UsagePage.Values[0] or UsagePage.Values[1]) or UsageAnswered() then
+    exit;
+  if UsagePage.Values[0] then V := 'true' else V := 'false';
+  ForceDirectories(ExtractFileDir(ConfigPath()));
+  if not LoadStringFromFile(ConfigPath(), S) or (Trim(S) = '') then
+    S := '{}';
+  P := Pos('{', S);
+  if Trim(Copy(S, P + 1, MaxInt)) = '}' then
+    S := '{"telemetry": ' + V + '}'
+  else
+    S := Copy(S, 1, P) + '"telemetry": ' + V + ', ' + Copy(S, P + 1, MaxInt);
+  SaveStringToFile(ConfigPath(), S, False);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    SaveUsageChoice();
+end;
+
 // Lorekeeper answers through Claude Code: say on the last page whether it's here yet (the app offers to install it).
 function ClaudeCodeFound(): Boolean;
 begin

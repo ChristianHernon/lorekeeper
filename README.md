@@ -184,7 +184,7 @@ To know how many people use it, Lorekeeper sends an **anonymous count** to [Post
 | Windows version | `Windows 11`, build `26200` |
 | whether listen mode and RomM are on, and the voice engine | `true`, `false`, `kokoro` |
 
-Never your games, questions, answers, notes, screenshots, file paths, user name, RomM address or hardware. No person profiles, and IP geolocation is turned off. The code is all in [`telemetry.py`](telemetry.py). The first time it runs, Lorekeeper asks whether you want to share these counts, and nothing is sent unless you say yes.
+Never your games, questions, answers, notes, screenshots, file paths, user name, RomM address or hardware. No person profiles, and IP geolocation is turned off. The code is all in [`telemetry.py`](telemetry.py). The installer asks whether you want to share these counts, with neither answer picked for you (installs from source are asked the first time Lorekeeper runs). Nothing is sent unless you say yes.
 
 **To change your answer:** tray → **Share anonymous usage counts**, or `"telemetry": true/false` in the settings file. Setting the `DO_NOT_TRACK=1` environment variable also turns it off and skips the question. Off means nothing is sent and no id is made.
 
