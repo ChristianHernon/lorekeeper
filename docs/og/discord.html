@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<title>Lorekeeper Discord card</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<!-- Source for og/discord.png (1280x720). Render: element screenshot of #card. -->
+<style>
+:root { --night:#0b0b2b; --indigo:#3b1f6e; --purple:#7a3cff; --purple-text:#b99bff; --blue:#2f6bff; --sky:#49c6ff; --crimson:#e0284f; --crimson-dark:#8a1636; --ink:#f2efe6; --ink-dim:#c8c4d8; --shadow:#05051a; }
+html, body { margin:0; padding:0; background:#000; }
+#card {
+  position:relative; width:1280px; height:720px; overflow:hidden; color:var(--ink);
+  background-color:var(--night);
+  background-image:
+    radial-gradient(ellipse at 50% 38%, rgba(122,60,255,.55), transparent 55%),
+    radial-gradient(ellipse at 50% -20%, rgba(47,107,255,.35), transparent 60%),
+    linear-gradient(180deg, var(--night) 0%, #10103a 55%, #1a1050 100%);
+}
+.stars { position:absolute; inset:0; }
+.stars::before, .stars::after { content:""; position:absolute; width:5px; height:5px; background:transparent; }
+.stars::before {
+  box-shadow:
+    40px 40px #f2efe6, 170px 120px #49c6ff, 300px 30px #f2efe6, 520px 70px #b99bff, 640px 22px #f2efe6,
+    760px 150px #49c6ff, 1120px 40px #f2efe6, 1150px 210px #b99bff, 1060px 590px #f2efe6, 900px 600px #49c6ff,
+    60px 560px #b99bff, 230px 600px #f2efe6, 30px 300px #49c6ff, 1170px 420px #f2efe6, 470px 590px #b99bff,
+    990px 18px #49c6ff, 380px 140px #f2efe6, 120px 470px #f2efe6;
+  opacity:.75;
+}
+.stars::after {
+  width:3px; height:3px;
+  box-shadow:
+    90px 90px #f2efe6, 260px 70px #b99bff, 430px 40px #49c6ff, 700px 100px #f2efe6, 860px 30px #b99bff,
+    1010px 120px #f2efe6, 1090px 330px #49c6ff, 1140px 520px #b99bff, 760px 580px #f2efe6, 340px 560px #49c6ff,
+    20px 420px #f2efe6, 150px 330px #b99bff, 600px 610px #f2efe6, 1185px 90px #f2efe6;
+  opacity:.5;
+}
+.crt { position:absolute; inset:0; z-index:5; pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 2px, transparent 2px 5px); }
+.frame { position:absolute; inset:18px; border:4px solid var(--indigo); z-index:1; }
+.frame::after { content:""; position:absolute; inset:6px; border:2px dashed rgba(185,155,255,.25); }
+/* Discord: stars kept out of the title/hook band */
+.stars::before { box-shadow:
+  40px 40px #f2efe6, 170px 120px #49c6ff, 300px 30px #f2efe6, 520px 70px #b99bff, 760px 40px #f2efe6,
+  1120px 40px #f2efe6, 1200px 210px #b99bff, 1130px 660px #f2efe6, 960px 680px #49c6ff, 60px 640px #b99bff,
+  250px 680px #f2efe6, 30px 300px #49c6ff, 1240px 420px #f2efe6, 560px 690px #b99bff, 1000px 18px #49c6ff,
+  330px 160px #f2efe6, 120px 470px #f2efe6, 1180px 560px #49c6ff, 980px 250px #f2efe6; }
+.stars::after { box-shadow:
+  90px 90px #f2efe6, 260px 70px #b99bff, 430px 40px #49c6ff, 880px 60px #f2efe6, 1060px 130px #b99bff,
+  1110px 330px #49c6ff, 1220px 620px #b99bff, 760px 690px #f2efe6, 380px 650px #49c6ff, 20px 420px #f2efe6,
+  150px 330px #b99bff, 680px 700px #f2efe6, 1250px 90px #f2efe6, 170px 560px #49c6ff; }
+.content {
+  position:absolute; z-index:2; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+}
+.mascot { width:420px; height:auto; image-rendering:pixelated; filter:drop-shadow(12px 12px 0 var(--shadow)); margin-bottom:34px; }
+h1 {
+  font-family:"Press Start 2P"; font-weight:400; font-size:84px; line-height:1; margin:0 0 34px; letter-spacing:2px;
+  text-shadow:6px 6px 0 var(--crimson-dark), 12px 12px 0 var(--shadow);
+}
+.hook { font-family:"Press Start 2P"; font-size:32px; line-height:1.4; margin:0; color:var(--sky); text-shadow:4px 4px 0 var(--shadow); }
+.hook b { color:#ffd23f; font-weight:400; }
+</style>
+</head>
+<body>
+<div id="card">
+  <div class="stars"></div>
+  <div class="frame"></div>
+  <div class="content">
+    <img class="mascot" src="../img/book.svg" alt="" width="420" height="315">
+    <h1>LOREKEEPER</h1>
+    <p class="hook">Your game's wiki, <b>out loud.</b></p>
+  </div>
+  <div class="crt"></div>
+</div>
+</body>
+</html>

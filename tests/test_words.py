@@ -75,3 +75,10 @@ def test_split_note():
     assert brain.split_note('Yes, swap it.\nNOTE: Sorcerer, crit build') == ('Yes, swap it.', 'Sorcerer, crit build')
     assert brain.split_note('Yes, swap it. NOTE: Act 3') == ('Yes, swap it.', 'Act 3')
     assert brain.split_note('No notes here.') == ('No notes here.', '')
+
+
+def test_sources_never_spoken():
+    a = 'It sings or shrieks.\nSources:\n- [Phalar Aluve - BG3 Wiki](https://bg3.wiki/wiki/Phalar_Aluve)'
+    assert brain.split_note(a) == ('It sings or shrieks.', '')
+    assert brain.split_note('Swap it.\nNOTE: Act 2\n\nSources:\n- [x](y)') == ('Swap it.', 'Act 2')
+    assert brain.spoken('Dead Hard dodges a hit. Sour') == 'Dead Hard dodges a hit. Sour'

@@ -5,9 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lorekeeper</title>
 <meta name="description" content="Lorekeeper is a Windows voice companion for video games. Hold a key, ask out loud, hear the answer: it knows which game you're in, reads that game's wiki, and answers in your ear without spoilers.">
-<meta property="og:title" content="Lorekeeper">
-<meta property="og:description" content="Hold a key. Ask out loud. Hear the answer. A spoiler-safe voice companion for PC games.">
-<meta name="theme-color" content="#0b0b2b">
+<link rel="canonical" href="https://lorekeeper-cgv.pages.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lorekeeper">
+<meta property="og:title" content="Lorekeeper: your game's wiki, out loud">
+<meta property="og:description" content="Hold a key, ask out loud, hear the answer: a spoiler-safe voice companion that reads your game's wiki and answers in your ear.">
+<meta property="og:url" content="https://lorekeeper-cgv.pages.dev/">
+<meta property="og:image" content="https://lorekeeper-cgv.pages.dev/og/card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pixel-art open book beside the word LOREKEEPER and the tagline: Hold a key. Ask out loud. Hear the answer.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Lorekeeper: your game's wiki, out loud">
+<meta name="twitter:description" content="Hold a key, ask out loud, hear the answer: a spoiler-safe voice companion that reads your game's wiki and answers in your ear.">
+<meta name="twitter:image" content="https://lorekeeper-cgv.pages.dev/og/card.png">
+<meta name="twitter:image:alt" content="Pixel-art open book beside the word LOREKEEPER and the tagline: Hold a key. Ask out loud. Hear the answer.">
+<meta name="theme-color" content="#7a3cff">
 <link rel="icon" href="img/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -246,7 +259,7 @@ kbd {
 .dialog-foot { text-align: right; padding: 4px 22px 4px; font-family: var(--pixel); font-size: 1.4rem; color: #ffd23f; line-height: 1; }
 
 /* Features */
-.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 28px; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px; }
 .feat { --bc: var(--purple); --bg: #1a1046; padding: 22px 20px; }
 .feat h3 { font-size: 12px; color: var(--ink); margin: 0 0 12px; display: flex; gap: 10px; align-items: flex-start; }
 .feat h3::before { content: ""; flex: none; width: 10px; height: 10px; margin-top: 3px; background: var(--sky); box-shadow: 3px 3px 0 var(--shadow); }
@@ -395,6 +408,7 @@ footer p { margin: 0; }
           <tr><th scope="row"><span class="game">Elden Ring</span>"I just beat Margit."</th><td><q>Noted.</q> That sets your spoiler horizon for this game.</td></tr>
           <tr><th scope="row"><span class="game">Elden Ring</span>"Where do I go next?"</th><td>Just the next step. Nothing past it.</td></tr>
           <tr><th scope="row"><span class="game">Elden Ring</span>"Spoil it."</th><td>Okay, the full answer.</td></tr>
+          <tr><th scope="row"><span class="game">Diablo IV</span>"Is this better than my helm?"</th><td>The verdict first, then the numbers that decide it, for your build.</td></tr>
           <tr><th scope="row"><span class="game">Any game</span>"Clip it."</th><td>Presses your Steam / Game Bar clip key.</td></tr>
         </tbody>
       </table>
@@ -408,7 +422,9 @@ footer p { margin: 0; }
       <div class="feat px"><h3>Listen mode</h3><p>No key to hold. Press Ctrl+Alt+L, then just say <q>Lorekeeper, …</q>. Follow-ups right after an answer don't need the name.</p></div>
       <div class="feat px"><h3>Spoiler-safe notes</h3><p>Progress notes are kept per game, so answers stop where you are.</p></div>
       <div class="feat px"><h3>Exclusive fullscreen</h3><p>Voice input and DXGI screen capture work without leaving fullscreen.</p></div>
-      <div class="feat px"><h3>5-second memory</h3><p>A rolling screen memory catches banners and pickups that fade before you can ask.</p></div>
+      <div class="feat px"><h3>10-minute memory</h3><p>The screen is remembered (a frame every 10&nbsp;s for 10 minutes, plus the last 5 seconds), so <q>what did that sign say two minutes ago?</q> works. Say <q>remember this as the vault code</q> to keep one for good.</p></div>
+      <div class="feat px"><h3>Gear tracker</h3><p>Hover an item and say <q>save this as my helm</q>. Later, <q>is this better than my helm?</q> compares stat by stat for your build. Made for Diablo, works with any game's tooltips.</p></div>
+      <div class="feat px"><h3>Learns as you play</h3><p>It notes your class, build and progress from what you ask, so answers fit your run and stay spoiler-safe.</p></div>
       <div class="feat px"><h3>Pin a game</h3><p>Tray menu to pin the game for emulators or when detection picks the wrong match.</p></div>
       <div class="feat px"><h3>Free &amp; open source</h3><p>All the code is on <a href="https://github.com/FindlayHi/lorekeeper">GitHub</a>. Read it, fork it, improve it.</p></div>
     </div>

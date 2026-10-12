@@ -266,7 +266,7 @@ class App:
         def streamed(s):   # speak each sentence as it completes; the last, maybe partial, waits
             if gen != self.gen:
                 return
-            s = s.split('NOTE:')[0]   # the saved note is never spoken
+            s = brain.spoken(s)   # the saved note and any Sources list are never spoken
             parts = voice.split(s)[:-1]
             if parts[:len(spoken)] != spoken:
                 return   # a new message began (text before a search): wait for the result
