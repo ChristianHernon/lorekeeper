@@ -170,7 +170,7 @@ To know how many people use it, Lorekeeper sends an **anonymous count** to [Post
 | | Example |
 |---|---|
 | a random install id, made on your PC and tied to nothing | `3f9c…` (in `%APPDATA%\Lorekeeper\telemetry.json`) |
-| Lorekeeper's version and commit | `0.1`, `ab57865` |
+| Lorekeeper's version and commit | `0.1.0`, `2b5b271` |
 | Windows version | `Windows 11`, build `26200` |
 | whether listen mode and RomM are on, and the voice engine | `true`, `false`, `kokoro` |
 
