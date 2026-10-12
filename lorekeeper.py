@@ -420,6 +420,58 @@ def tray(app, box):
         pystray.MenuItem('Ask log', lambda *_: os.path.exists(LOG) and os.startfile(LOG)),
         pystray.MenuItem('Quit', quit_))
     icon = art.tray_icon(pystray, 'Lorekeeper', 'Lorekeeper', menu)   # the pixel book; its cover turns blue in listen mode
+
+    # Lorekeeper's own menu, drawn like the site; the native one above stays as the fallback
+    from panel import Item, Panel
+
+    def games_page():
+        gs = sorted({g['name']: g for g in games.index()}.values(), key=lambda g: g['name'].lower())
+        pinned = lambda: (games.pinned() or {}).get('game', {}).get('name')
+        return ([Item('Auto-detect', action=auto, radio=lambda: games.pinned() is None)]
+                + [Item(g['name'], action=pin_to(g), radio=lambda n=g['name']: pinned() == n) for g in gs]
+                + [Item('Rescan installed games', action=lambda: games.build(), note='scan')])
+
+    def voices_page():
+        kokoro = app.cfg['voice'] == 'kokoro'
+        return [Item(name, action=use_voice(v), radio=lambda v=v: kokoro and app.cfg['kokoroVoice'] == v, enabled=kokoro)
+                for name, v in voice.VOICES.items()]
+
+    def romm_page():
+        return [Item(f'Connected: {romm.url()}', enabled=False), Item('Disconnect', action=disconnect_romm)]
+
+    def notes_open():
+        if not os.path.exists(notes.path(app.game)):
+            notes.add(app.game, 'notes opened')
+        os.startfile(notes.path(app.game))
+
+    def items():
+        return [
+            Item('GAME', header=True),
+            Item('Pick the game', sub=games_page),
+            Item("This game's notes", action=notes_open, enabled=lambda: bool(app.game)),
+            Item('TALK', header=True),
+            Item(lambda: f'Hotkey: {hotkey.pretty(app.hk.combo)}', action=set_hotkey, note='change'),
+            Item('Works outside games too', action=flip('hotkeyEverywhere'), check=lambda: app.cfg['hotkeyEverywhere']),
+            Item('Listen mode', action=app.toggle_listen, check=lambda: app.listener.on),
+            Item(lambda: f'Listen key: {hotkey.pretty(app.lk.combo)}', action=set_listen_key, note='change'),
+            Item('VOICE & ANSWERS', header=True),
+            Item('Voice', sub=voices_page),
+            Item('Spoilers', action=flip('spoilers'), check=lambda: app.cfg['spoilers']),
+            Item('Show answers in a box', action=flip('box'), check=lambda: app.cfg['box']),
+            Item('Use the screen', action=flip('screen'), check=lambda: app.cfg['screen']),
+            Item('MORE', header=True),
+            Item('RomM', sub=romm_page) if romm.connected() else Item('Connect RomM', action=connect_romm, note='pair'),
+            Item('Share anonymous usage counts', action=flip('telemetry'), check=lambda: app.cfg['telemetry'] is True),
+            Item('Settings file', action=lambda: (config.save(app.cfg), os.startfile(config.FILE))),
+            Item('Ask log', action=lambda: os.path.exists(LOG) and os.startfile(LOG)),
+            Item('Quit', action=lambda: quit_(icon, None)),
+        ]
+
+    def status():
+        playing = f"Playing: {app.game['name']}" if app.game else 'No game in front'
+        return playing, f'Hold {hotkey.pretty(app.hk.combo)} to ask · {hotkey.pretty(app.lk.combo)} listen mode'
+    pnl = Panel(box.root, items, status)
+    icon.on_click = lambda: pnl.open()
     icon.run_detached()
 
     def watch_listen():   # listen mode flips from the menu, the listen key and startup, so follow the listener itself

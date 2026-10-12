@@ -120,6 +120,15 @@ def tray_icon(pystray, *args):
     this one loads the frame drawn for the tray's exact size. Set .listening to switch to the listen-mode book."""
     class Icon(pystray.Icon):
         _listening = False
+        on_click = None   # set to open Lorekeeper's own pixel menu; the native menu is the fallback
+
+        def _on_notify(self, wparam, lparam):
+            if self.on_click and lparam in (0x0202, 0x0205):   # WM_LBUTTONUP, WM_RBUTTONUP
+                try:
+                    return self.on_click()
+                except Exception as e:
+                    print('panel:', e)
+            return super()._on_notify(wparam, lparam)
 
         @property
         def listening(self):
