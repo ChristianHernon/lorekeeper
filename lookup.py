@@ -1,20 +1,44 @@
 """Wiki text fetched before the model starts thinking: one DuckDuckGo search, then the top wiki pages' source.
 Most questions are answered from this in one pass, skipping the model's own search-then-fetch round trips (~10 s)."""
-import html, json, os, re, urllib.parse, urllib.request
+import html, ipaddress, json, os, re, socket, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 import config
 
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
 WIKIS = ('bg3.wiki', 'wiki.gg', 'fandom.com', 'fextralife.com', 'game8.co', 'wikia', 'wiki')   # earlier = preferred
 # MediaWiki sites whose page source we can fetch (infoboxes keep quotes and stats): host pattern -> api.php path
-APIS = {r'[^/]+\.wiki\.gg': '/api.php', r'[^/]+\.fandom\.com': '/api.php', r'bg3\.wiki': '/w/api.php', r'www\.poe2wiki\.net': '/api.php',
+SUB = r'[a-z0-9-]+(?:\.[a-z0-9-]+)*'   # a hostname's labels only: no '?', '#', '@' or ':' to smuggle another host in
+APIS = {SUB + r'\.wiki\.gg': '/api.php', SUB + r'\.fandom\.com': '/api.php', r'bg3\.wiki': '/w/api.php', r'www\.poe2wiki\.net': '/api.php',
         r'stardewvalleywiki\.com': '/mediawiki/api.php', r'strategywiki\.org': '/w/api.php'}
 MEDIAWIKI = re.compile(r'^https?://(' + '|'.join(APIS) + r')/wiki/([^?#]+)')
 
 
+def check_url(url):
+    """Only public https pages: search results are anyone's links, and must not point this PC at localhost or the LAN."""
+    u = urllib.parse.urlparse(url)
+    if u.scheme != 'https' or not u.hostname:
+        raise ValueError(f'not fetching {url[:80]}')
+    try:
+        addrs = {a[4][0] for a in socket.getaddrinfo(u.hostname, u.port or 443, proto=socket.IPPROTO_TCP)}
+    except OSError as e:
+        raise ValueError(f'cannot resolve {u.hostname}') from e
+    if not addrs or not all(ipaddress.ip_address(a.split('%')[0]).is_global for a in addrs):
+        raise ValueError(f'not fetching {u.hostname}: it is not a public address')
+
+
+class _Redirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        check_url(newurl)   # a public page can still bounce to an internal one
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_opener = urllib.request.build_opener(_Redirects)
+
+
 def get(url, timeout=4):
+    check_url(url)
     req = urllib.request.Request(url, headers={'User-Agent': UA})
-    return urllib.request.urlopen(req, timeout=timeout).read().decode('utf-8', 'replace')
+    return _opener.open(req, timeout=timeout).read().decode('utf-8', 'replace')
 
 
 def text_of(h):
@@ -85,7 +109,7 @@ def page(url, question='', most=5000):
     try:
         if m:
             api_path = next(p for h, p in APIS.items() if re.fullmatch(h, m[1]))
-            api = f'https://{m[1]}{api_path}?action=parse&format=json&prop=wikitext&redirects=1&page=' + m[2]
+            api = f'https://{m[1]}{api_path}?action=parse&format=json&prop=wikitext&redirects=1&page=' + urllib.parse.quote(m[2], safe="%:/()_,.-~'")
             j = json.loads(get(api))
             wt = j.get('parse', {}).get('wikitext', {}).get('*', '')
             wt = re.sub(r'\[\[(?:File|Image|Category):[^\]]*\]\]|<!--.*?-->|<ref[^>]*>.*?</ref>|<gallery>.*?</gallery>', '', wt, flags=re.S)
@@ -148,7 +172,7 @@ def host_for(game, urls=()):
     if g in KNOWN:
         return KNOWN[g]
     h = _hosts()
-    if h.get(g):
+    if h.get(g) and re.fullmatch(SUB, h[g]):   # a host saved by an older version, from a search result, is checked again
         return h[g]
     for u in urls:
         m = MEDIAWIKI.match(u)
