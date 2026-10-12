@@ -7,7 +7,8 @@ import config
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36'
 WIKIS = ('bg3.wiki', 'wiki.gg', 'fandom.com', 'fextralife.com', 'game8.co', 'wikia', 'wiki')   # earlier = preferred
 # MediaWiki sites whose page source we can fetch (infoboxes keep quotes and stats): host pattern -> api.php path
-APIS = {r'[^/]+\.wiki\.gg': '/api.php', r'[^/]+\.fandom\.com': '/api.php', r'bg3\.wiki': '/w/api.php'}
+APIS = {r'[^/]+\.wiki\.gg': '/api.php', r'[^/]+\.fandom\.com': '/api.php', r'bg3\.wiki': '/w/api.php', r'www\.poe2wiki\.net': '/api.php',
+        r'stardewvalleywiki\.com': '/mediawiki/api.php'}
 MEDIAWIKI = re.compile(r'^https?://(' + '|'.join(APIS) + r')/wiki/([^?#]+)')
 
 
@@ -60,7 +61,10 @@ def page(url, most=3500):
 KNOWN = {"baldur's gate 3": 'bg3.wiki', 'enter the gungeon': 'enterthegungeon.wiki.gg', 'hades': 'hades.fandom.com',
          'hades ii': 'hades.fandom.com', 'terraria': 'terraria.wiki.gg', 'risk of rain 2': 'riskofrain2.wiki.gg',
          'dead by daylight': 'deadbydaylight.wiki.gg', 'deep rock galactic': 'deeprockgalactic.wiki.gg', 'subnautica 2': 'subnautica.fandom.com',
-         'stardew valley': 'stardewvalleywiki.com', 'the binding of isaac: rebirth': 'bindingofisaacrebirth.wiki.gg'}
+         'stardew valley': 'stardewvalleywiki.com', 'the binding of isaac: rebirth': 'bindingofisaacrebirth.wiki.gg',
+         'the witcher 3: wild hunt': 'witcher.fandom.com', 'the witcher 3': 'witcher.fandom.com', 'cyberpunk 2077': 'cyberpunk.fandom.com',
+         'hollow knight': 'hollowknight.wiki.gg', 'hollow knight: silksong': 'hollowknight.wiki.gg', 'path of exile 2': 'www.poe2wiki.net',
+         'the elder scrolls v: skyrim special edition': 'elderscrolls.fandom.com', 'fallout 4': 'fallout.fandom.com', 'starfield': 'starfield.fandom.com'}
 HOSTS = os.path.join(config.DIR, 'wikis.json')   # learned: game name -> its MediaWiki host ('' = none found)
 STOP = r"\b(what|whats|does|do|is|are|the|a|an|did|i|just|get|got|me|tell|about|how|can|should|where|who|which|my|to|of|in|for|it|this|that|please|ok|okay|hey)\b"
 
