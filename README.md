@@ -127,7 +127,7 @@ Everything per game is a plain file you can edit, in `%APPDATA%\Lorekeeper\games
 | Key | Default | |
 |---|---|---|
 | `hotkey` | `ctrl+alt+space` | hold to talk; any key, combo, or `mouse4`/`mouse5` |
-| `hotkeyEverywhere` | `false` | off: the hotkey only works while a game is in front, so Atticus can share it |
+| `hotkeyEverywhere` | `false` | off: the hotkey only acts while a game is in front, and anywhere else it passes through, so another app that uses the same shortcut still gets it there. On: it works everywhere |
 | `listen` / `listenKey` | `false` / `ctrl+alt+l` | listen mode and its on/off key |
 | `followUpSeconds` | `8` | how long after an answer a follow-up needs no name |
 | `clipKeys` | `ctrl+f10` | in Steam → Settings → Game Recording, set **Save the last 30 seconds** to <kbd>Ctrl</kbd>+<kbd>F10</kbd>. Or use `win+alt+g` for Game Bar |

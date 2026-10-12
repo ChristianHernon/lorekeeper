@@ -41,7 +41,7 @@ def pretty(combo):
 
 class Hotkey:
     """on_down() when the combo goes down, on_up() when its key comes up, on_cancel() for Esc while held.
-    active(): is it ours right now? When not (no game in front), the key passes through, e.g. to Atticus on the same combo."""
+    active(): is it ours right now? When not (no game in front), the key passes through to whatever else uses the same combo."""
 
     def __init__(self, combo, on_down, on_up, on_cancel=lambda: None, active=lambda: True):
         self.set(combo)

@@ -8,10 +8,11 @@ MODELS = os.path.join(os.environ.get('LOCALAPPDATA') or DIR, 'Lorekeeper', 'mode
 
 DEFAULTS = {
     'hotkey': 'ctrl+alt+space',  # hold to talk, let go to ask; any key or mouse4/mouse5 (tray → Hotkey)
-    'hotkeyEverywhere': False,
+    'hotkeyEverywhere': False,   # False: the hotkey only acts while a game is in front, and passes through everywhere else,
+                                 # so another app that uses the same shortcut (another voice assistant, say) still gets it there
     'listen': False,             # listen mode: no key to hold, start with "Lorekeeper, …"
     'listenKey': 'ctrl+alt+l',   # turns listen mode on and off
-    'followUpSeconds': 8,        # after an answer, this long to ask a follow-up without the wake word   # False: only while a game is in front, so Atticus keeps the same combo elsewhere
+    'followUpSeconds': 8,        # after an answer, this long to ask a follow-up without the wake word
     'model': 'haiku',            # quick answers; "in detail" asks use deepModel
     'deepModel': 'sonnet',
     'whisper': 'base.en',        # base.en is quick on CPU; small.en hears names better
