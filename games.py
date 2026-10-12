@@ -4,9 +4,10 @@ The index is [{name, id, source, dir}], cached in games.json and rebuilt when an
 (a game installed since). A pinned game (tray menu, or "I'm playing X") wins until the exe in front changes.
 """
 import difflib, glob, json, os, re, sys, time
-import config, win
+import config, romm, win
 
 INDEX = os.path.join(config.DIR, 'games.json')
+_missed = set()   # exes that matched nothing even after a rescan
 PIN = os.path.join(config.DIR, 'pinned.json')
 NOT_GAMES = re.compile(r'redistributable|runtime|steamvr|proton|dedicated server|soundtrack|\bsdk\b|benchmark|3dmark|wallpaper engine', re.I)
 LAUNCHERS = re.compile(r'\\(steam|steamwebhelper|epicgameslauncher|galaxyclient|explorer|lorekeeper|python|pythonw|windowsterminal|chrome|msedge|firefox|discord)\.exe$', re.I)
@@ -189,6 +190,13 @@ def current(exe=None, title=None):
         unpin()   # a different game is in front now
     games = index()
     g = match(exe, title or '', games)
-    if not g and exe and not LAUNCHERS.search(exe):
+    if not g and exe and not LAUNCHERS.search(exe) and not romm.EMULATORS.search(exe) and exe not in _missed:
+        _missed.add(exe)   # a game installed since the index was built? rescan once per app, not every few seconds
         g = match(exe, title or '', build())
+    if not g:
+        g = romm.current(exe, title)   # an emulator or the RomM web player: RomM knows the game
+    if not g and exe and romm.EMULATORS.search(exe):   # no RomM: the emulator's window title names the game
+        names = romm.clean_title(title or '')
+        if names:
+            g = {'name': names[0], 'id': '', 'source': 'emulator', 'dir': ''}
     return g, exe

@@ -7,6 +7,7 @@ answers spoiler-safe ("I just beat Margit"); "spoil it" re-asks without the guar
   lorekeeper.py                 run (tray icon)
   lorekeeper.py --ask "<q>"     one question for the game in front, typed, printed (no voice)
   lorekeeper.py --games         the installed games it knows, rebuilt
+  lorekeeper.py --romm-connect <url>   pair with your RomM (approve the code it shows)
   lorekeeper.py --voices        sample wavs of the voices, to choose kokoroVoice
 Settings: %APPDATA%/Lorekeeper/config.json. Log: log.jsonl beside it.
 """
@@ -19,7 +20,7 @@ if sys.platform == 'win32':
         except (AttributeError, ValueError):
             pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import brain, capture, commands, config, games, gear, listen, lookup, notes, voice  # noqa: E402
+import brain, capture, commands, config, games, gear, listen, lookup, notes, romm, voice  # noqa: E402
 
 LOG = os.path.join(config.DIR, 'log.jsonl')
 TURN_SECS = 600
@@ -59,7 +60,11 @@ class App:
         if self.cfg['hotkeyEverywhere']:
             return True
         exe, title = games.win.front()
-        if not exe or games.LAUNCHERS.search(exe):
+        if not exe:
+            return False
+        if romm.EMULATORS.search(exe) or (self.cfg.get('rommUrl') and 'romm' in (title or '').lower()):
+            return True   # an emulator, or the RomM web player
+        if games.LAUNCHERS.search(exe):
             return False
         return bool(self._pin) or bool(games.match(exe, title, self._games))
 
@@ -259,7 +264,8 @@ class App:
             self.voice.say("I couldn't see the screen, so going by your words.")
         now = time.time()
         self.turns = [t for t in self.turns if now - t['t'] < TURN_SECS][-3:]
-        wiki = '' if shots or saved or kit else lookup.wiki(q, self.game and self.game['name'], folder=notes.FOLDER)   # a screenshot names the thing; the model searches then
+        wiki = '' if shots or saved or kit else lookup.wiki(q, self.game and self.game['name'], folder=notes.FOLDER, progress=notes.read(self.game, 3))   # a screenshot names the thing; the model searches then
+        wiki = '\n\n'.join(x for x in (romm.context(self.game, q), wiki) if x)   # RomM walkthroughs first: they're the player's own
         text = brain.request(q, self.game, notes.read(self.game), self.turns, wiki, kit)
         spoken = []
 
@@ -359,6 +365,33 @@ def tray(app, box):
             box.show('Listen key', f"{hotkey.pretty(app.lk.combo)} turns listen mode on and off." if combo else 'Unchanged.')
         app.lk.record(done)
 
+    def connect_romm(*_):
+        def ask():   # on the Tk thread
+            from tkinter import simpledialog
+            addr = simpledialog.askstring('Connect RomM', 'Your RomM address, e.g. http://192.168.0.50:3010',
+                                          initialvalue=romm.url() or 'http://', parent=box.root)
+            if not addr or addr.strip() in ('http://', 'https://'):
+                return
+
+            def on_code(code, approve):
+                box.show('Connect RomM', f'Approve code {code} in RomM. Opening it in your browser…', stay=True)
+                os.startfile(approve)
+
+            def on_done(user, err):
+                app.cfg['rommUrl'] = romm.url() or app.cfg.get('rommUrl', '')
+                box.show('RomM', f'Connected as {user}. Play from RomM or an emulator and just ask.' if user else err)
+                app.voice.say('RomM connected.' if user else err)
+            romm.pair(addr, on_code, on_done)
+        box.root.after(0, ask)
+
+    def disconnect_romm(*_):
+        romm.forget()
+        app.cfg.pop('rommUrl', None)
+        cfg = config.load()
+        cfg.pop('rommUrl', None)
+        config.save(cfg)
+        box.show('RomM', 'Disconnected. Remove the "Lorekeeper" device in RomM to revoke it there too.')
+
     def use_voice(v):
         def do(*_):
             app.voice.stop()
@@ -381,6 +414,9 @@ def tray(app, box):
         pystray.MenuItem(lambda _: f'Listen key: {hotkey.pretty(app.lk.combo)}  (change…)', set_listen_key),
         pystray.MenuItem('Hotkey works outside games too', flip('hotkeyEverywhere'), checked=lambda _: app.cfg['hotkeyEverywhere']),
         pystray.MenuItem('Voice', pystray.Menu(voice_list)),
+        pystray.MenuItem('RomM', pystray.Menu(lambda: [
+            pystray.MenuItem(f'Connected: {romm.url()}', None, enabled=False), pystray.MenuItem('Disconnect', disconnect_romm)]
+            if romm.connected() else [pystray.MenuItem('Connect RomM…', connect_romm)])),
         pystray.MenuItem('Spoilers', flip('spoilers'), checked=lambda _: app.cfg['spoilers']),
         pystray.MenuItem('Show answers in a box', flip('box'), checked=lambda _: app.cfg['box']),
         pystray.MenuItem('Use the screen', flip('screen'), checked=lambda _: app.cfg['screen']),
@@ -399,6 +435,13 @@ def main():
     cfg = config.load()
     if args[:1] == ['--games']:
         return print('\n'.join(f"{g['name']}  [{g['source']}]  {g['dir']}" for g in games.build()) or 'no games found')
+    if args[:1] == ['--romm-connect']:   # same as tray → RomM → Connect RomM…
+        done = threading.Event()
+        romm.pair(args[1] if len(args) > 1 else input('RomM address: '),
+                  lambda code, link: (print(f'Approve code {code} in RomM: {link}', flush=True), os.startfile(link)),
+                  lambda user, err: (print(f'Connected as {user}.' if user else err, flush=True), done.set()))
+        done.wait(700)
+        return
     if args[:1] == ['--voices']:   # sample wavs to choose kokoroVoice by ear
         folder = os.path.join(config.DIR, 'voices')
         voice.samples(folder, config.MODELS)
@@ -411,7 +454,7 @@ def main():
         if not p:
             return print('Claude Code not found')
         t = time.time()
-        wiki = lookup.wiki(q, g and g['name'], folder=notes.FOLDER)
+        wiki = '\n\n'.join(x for x in (romm.context(g, q), lookup.wiki(q, g and g['name'], folder=notes.FOLDER, progress=notes.read(g, 3))) if x)
         print(f'(wiki {len(wiki)} chars in {time.time() - t:.1f}s)')
         a, usd = brain.ask(p, brain.request(q, g, notes.read(g), [], wiki, gear.text(g) if gear.wants(q) else ''))
         a, learned = brain.split_note(a)

@@ -259,7 +259,10 @@ def own_guides(question, game, folder, most=4000):
     return '\n\n'.join(out[:2])
 
 
-def wiki(question, game, pages=2, folder=''):
+def wiki(question, game, pages=2, folder='', progress=''):
+    """progress: the player's latest notes. "Where do I go next?" names nothing, so their last place or item is what to look up."""
+    if progress and not words(question) - VERBS - {'where', 'what', 'next'}:
+        question = question + ' ' + ' '.join(progress.strip().splitlines()[-2:])
     """'Source: <url>\n<text>' blocks for the prompt, or '' when the search finds nothing (the model searches itself)."""
     urls = []
     host = host_for(game) if game else ''

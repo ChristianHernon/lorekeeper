@@ -25,6 +25,7 @@ DEFAULTS = {
     'boxSeconds': 12,
     'spoilers': False,           # True: answers ignore your progress notes
     'screen': True,              # "what is this item" sends a screenshot
+    'rommUrl': '',               # set by tray → RomM → Connect RomM… (the token is in Windows Credential Manager)
     'clipKeys': 'ctrl+f10',              # "clip it" presses this: Steam → Game Recording → "Save the last 30 seconds" (set it to Ctrl+F10), or Game Bar's win+alt+g
 }
 

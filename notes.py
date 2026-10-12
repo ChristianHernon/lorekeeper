@@ -33,6 +33,9 @@ def add(game, line):
         if new:
             f.write(f"# {game['name']}\n\n")
         f.write(f"- {time.strftime('%Y-%m-%d')}: {line.strip()}\n")
+    if game.get('source') == 'romm':   # keep them on the game in RomM too
+        import threading, romm
+        threading.Thread(target=romm.save_notes, args=(game, read(game, 200)), daemon=True).start()
 
 
 def names(game):

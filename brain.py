@@ -78,7 +78,8 @@ def stop(p):
 
 def request(question, game, notes, turns, wiki='', gear=''):
     """The text sent with the question: which game, where the player is, the last few turns for "and where is that?"."""
-    parts = [f"Game: {game['name']}" + (f" (Steam app {game['id']})" if game.get('source') == 'steam' and game.get('id') else '') if game
+    parts = [f"Game: {game['name']}" + (f" ({game['platform']})" if game.get('platform') else '')
+             + (f" (Steam app {game['id']})" if game.get('source') == 'steam' and game.get('id') else '') if game
              else 'Game: unknown (no game detected; ask which game if it matters)']
     if notes:
         parts.append('Player progress notes (oldest first):\n' + notes)

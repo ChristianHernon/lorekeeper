@@ -71,6 +71,20 @@ cd lorekeeper
 Then start **Lorekeeper** from the Start menu. It lives in the tray. Launch a game and hold <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd>.
 
 <details>
+<summary><b>🕹️ Works with RomM (and any emulator)</b></summary>
+<br>
+
+Retro games are detected from the emulator's window title: RetroArch, Dolphin, DuckStation, PCSX2, PPSSPP, Ryujinx, mGBA, Mesen and more.
+
+Connect your [RomM](https://romm.app) library (tray → **RomM → Connect RomM…**, then approve the code in RomM; no password is typed into Lorekeeper) and you also get:
+- **The right game, by its real name:** emulator titles and the RomM web player resolve to the game in your library, platform included. "Zelda Link to the Past" becomes *The Legend of Zelda: A Link to the Past (SNES)*.
+- **Your walkthroughs:** text guides stored on the game in RomM (its GameFAQs import, or your uploads) are searched for the part you're on.
+- **Your notes, both ways:** your own RomM notes on the game go with every question, and Lorekeeper's progress notes are kept on the game in RomM as a note titled "Lorekeeper".
+
+Older games also get [StrategyWiki](https://strategywiki.org) walkthrough chapters for "where do I go" questions, with or without RomM.
+</details>
+
+<details>
 <summary><b>🎙️ Listen mode, in detail</b></summary>
 <br>
 
