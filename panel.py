@@ -29,6 +29,16 @@ class Item:
         return not self.header and self.is_enabled() and bool(self.action or self.sub)
 
 
+def fit(text, font, width):
+    """The text, cut with … so it never runs past the panel's edge."""
+    f = tkfont.Font(font=font)
+    if f.measure(text) <= width:
+        return text
+    while text and f.measure(text + '…') > width:
+        text = text[:-1]
+    return text.rstrip() + '…'
+
+
 class Pane:
     """One pixel window of rows. The main menu is a Pane; a sub-menu is another, beside it."""
 
@@ -102,8 +112,11 @@ class Pane:
                 continue
             i, top, on = len(self.rows), y, it.is_enabled()
             c.create_rectangle(x0 + 4, top, x1 - 4, top + ROW, fill=BG, width=0, tags=(f'bg{i}',))
-            c.create_text(x0 + 18, top + ROW // 2, text=it.text(), font=m.f_row, fill=INK if on else DIM, anchor='w', tags=(f'tx{i}',))
             right = x1 - 16
+            room = (right - 50 if it.check is not None else right - 36 if (it.radio is not None or it.sub is not None)
+                    else right - 70 if it.note else right) - (x0 + 18)
+            c.create_text(x0 + 18, top + ROW // 2, text=fit(it.text(), m.f_row, room), font=m.f_row, fill=INK if on else DIM,
+                          anchor='w', tags=(f'tx{i}',))
             if it.check is not None:
                 self._switch(right - 34, top + 8, bool(it.check()), on)
             elif it.radio is not None:

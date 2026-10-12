@@ -443,7 +443,8 @@ def tray(app, box):
                 for name, v in voice.VOICES.items()]
 
     def romm_page():
-        return [Item(f'Connected: {romm.url()}', enabled=False), Item('Disconnect', action=disconnect_romm)]
+        host = romm.url().split('://', 1)[-1]
+        return [Item('Connected to', enabled=False, note=host), Item('Disconnect', action=disconnect_romm)]
 
     def notes_open():
         if not os.path.exists(notes.path(app.game)):
@@ -518,6 +519,18 @@ def selftest(ci=False):
     return 0 if ok else 1
 
 
+def already_running():
+    """One Lorekeeper at a time (installed and source copies included): two would both answer every hotkey press.
+    A named mutex lives as long as the process that made it, so a crash never leaves it stuck."""
+    if sys.platform != 'win32':
+        return False
+    import ctypes
+    k = ctypes.windll.kernel32
+    k.CreateMutexW.restype = ctypes.c_void_p
+    already_running.handle = k.CreateMutexW(None, False, 'Local\\Lorekeeper.SingleInstance')   # kept open until exit
+    return k.GetLastError() == 183   # ERROR_ALREADY_EXISTS
+
+
 def main():
     args = sys.argv[1:]
     cfg = config.load()
@@ -551,6 +564,11 @@ def main():
         if learned and g:
             notes.add(g, learned + ' (learned)')
         return print(f'{a}\n(${usd:.4f}, {time.time() - t:.1f}s)' + (f'\n[noted: {learned}]' if learned else ''))
+    if already_running():
+        ctypes = __import__('ctypes')
+        ctypes.windll.user32.MessageBoxW(None, 'Lorekeeper is already running: look for the pixel book in your tray '
+                                               '(click the ^ arrow by the clock if it is hidden).', 'Lorekeeper', 0x40)
+        return
     import box as boxmod, hotkey
     if not brain.claude_ok():
         print('Claude Code (claude) is not on PATH: install it and sign in first.', file=sys.stderr)
