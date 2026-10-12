@@ -11,9 +11,10 @@ DEFAULTS = {
     'deepModel': 'sonnet',
     'whisper': 'base.en',        # base.en is quick on CPU; small.en hears names better
     'whisperDevice': 'cpu',      # cuda with an NVIDIA card and the CUDA libraries
-    'voice': 'sapi',             # sapi (Windows, offline) or edge (nicer, online)
-    'edgeVoice': 'en-US-AndrewNeural',
-    'rate': 0,                   # SAPI speed, -10..10
+    'voice': 'edge',             # edge: Microsoft's neural voices (online); sapi: Windows' own (offline, robotic)
+    'edgeVoice': 'en-GB-SoniaNeural',   # samples: Settings folder → voices
+    'pitch': '-8Hz',             # lower = throatier; edge only
+    'rate': 0,                   # speed, -10..10
     'box': True,                 # show the question and answer in a small box too
     'boxSeconds': 12,
     'spoilers': False,           # True: answers ignore your progress notes
