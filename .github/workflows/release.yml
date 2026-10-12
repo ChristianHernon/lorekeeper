@@ -21,7 +21,7 @@ jobs:
         run: |
           $tag = '${{ github.ref_name }}'.TrimStart('v')
           $app = (Select-String -Path telemetry.py -Pattern "^VERSION = '(.+)'").Matches[0].Groups[1].Value
-          if ($tag -ne $app) { throw "Tag $tag but telemetry.VERSION is $app: the app would keep offering itself as an update" }
+          if ($tag -ne $app) { throw "Tag ${tag} but telemetry.VERSION is ${app}, so the app would keep offering itself as an update" }
       - name: Dependencies
         run: python -m pip install -r requirements.txt pyinstaller
       - name: Tests
