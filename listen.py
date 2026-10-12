@@ -73,7 +73,8 @@ class Listener:
         if self.on:
             return
         self.seg.reset()
-        self.stream = sd.InputStream(samplerate=RATE, channels=1, dtype='float32', blocksize=FRAME,
+        from ears import device
+        self.stream = sd.InputStream(samplerate=RATE, channels=1, dtype='float32', blocksize=FRAME, device=device(self.ears.mic),
                                      callback=lambda d, *_: self.q.put(d[:, 0].copy()))
         self.stream.start()
         self.on = True

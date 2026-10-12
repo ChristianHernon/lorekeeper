@@ -47,6 +47,8 @@ Name: "startup"; Description: "Start Lorekeeper when Windows starts"; GroupDescr
 [Files]
 Source: "..\dist\Lorekeeper\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+Source: "wizard\raptor-*.bmp"; Flags: dontcopy
+
 [Icons]
 Name: "{userprograms}\Lorekeeper"; Filename: "{app}\Lorekeeper.exe"; Comment: "A voice companion for PC games"
 Name: "{userstartup}\Lorekeeper"; Filename: "{app}\Lorekeeper.exe"; Tasks: startup
@@ -65,6 +67,28 @@ WelcomeLabel2=This installs Lorekeeper, a voice companion for PC games: hold a k
 // so the app doesn't ask again. Skipped when it was answered before (an upgrade); silent installs leave it to the app.
 var
   UsagePage: TInputOptionWizardPage;
+  Raptor: TBitmapImage;
+
+// The secret's raptor, on the last page only, bottom right: one image per display scaling (3 screen px per art px at 100%)
+procedure AddRaptor(Page: TWinControl);
+var
+  K: Integer;
+  F: String;
+begin
+  K := (ScaleX(300) + 50) div 100;
+  if K < 3 then K := 3;
+  if K = 7 then K := 6;
+  if K > 8 then K := 8;
+  F := 'raptor-' + IntToStr(K) + '.bmp';
+  ExtractTemporaryFile(F);
+  Raptor := TBitmapImage.Create(Page);
+  Raptor.Parent := Page;
+  Raptor.Bitmap.LoadFromFile(ExpandConstant('{tmp}\' + F));
+  Raptor.AutoSize := True;
+  Raptor.Left := Page.ClientWidth - Raptor.Width - ScaleX(20);
+  Raptor.Top := Page.ClientHeight - Raptor.Height - ScaleY(12);
+  Raptor.Anchors := [akRight, akBottom];
+end;
 
 function ConfigPath(): String;
 begin
@@ -90,6 +114,11 @@ begin
   UsagePage.Add('Don''t share');
   UsagePage.Values[0] := False;
   UsagePage.Values[1] := False;
+#ifdef RaptorTest
+  AddRaptor(WizardForm.WelcomePage);   // test builds only: see him without finishing an install
+#else
+  AddRaptor(WizardForm.FinishedPage);
+#endif
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;

@@ -102,6 +102,8 @@ KNOWN = {"baldur's gate 3": 'bg3.wiki', 'enter the gungeon': 'enterthegungeon.wi
          'stardew valley': 'stardewvalleywiki.com', 'the binding of isaac: rebirth': 'bindingofisaacrebirth.wiki.gg',
          'the witcher 3: wild hunt': 'witcher.fandom.com', 'the witcher 3': 'witcher.fandom.com', 'cyberpunk 2077': 'cyberpunk.fandom.com',
          'hollow knight': 'hollowknight.wiki.gg', 'hollow knight: silksong': 'hollowknight.wiki.gg', 'path of exile 2': 'www.poe2wiki.net',
+         'borderlands 3': 'borderlands.fandom.com', 'borderlands 2': 'borderlands.fandom.com', 'borderlands: the pre-sequel': 'borderlands.fandom.com',
+         'borderlands game of the year enhanced': 'borderlands.fandom.com', 'borderlands 4': 'borderlands.fandom.com',
          'the elder scrolls v: skyrim special edition': 'elderscrolls.fandom.com', 'fallout 4': 'fallout.fandom.com', 'starfield': 'starfield.fandom.com'}
 HOSTS = os.path.join(config.DIR, 'wikis.json')   # learned: game name -> its MediaWiki host ('' = none found)
 STOP = r"\b(what|whats|does|do|is|are|the|a|an|did|i|just|get|got|me|tell|about|how|can|should|where|who|which|my|to|of|in|for|it|this|that|please|ok|okay|hey)\b"
@@ -177,12 +179,15 @@ def titles(question):
     return out[:8]
 
 
-def site_search(host, question, n=2):
+def site_search(host, question, n=2, game=''):
     """The wiki's own API: names in the question that are page titles first, then its full-text search. ~0.3 s, no captchas."""
     api = f'https://{host}{api_path(host)}?format=json&action=query'
     url = lambda t: f"https://{host}/wiki/{urllib.parse.quote(t.replace(' ', '_'))}"
     out = []
     cands = titles(question)
+    if game:   # series wikis title an item per game: "Flakker (Borderlands 3)" before "Flakker"
+        cands = [f'{t} ({game})' for t in cands[:3]] + cands
+        cands = cands[:10]
     if cands:
         j = json.loads(get(api + '&redirects=1&titles=' + urllib.parse.quote('|'.join(cands)), timeout=4)).get('query', {})
         real = {p['title'] for p in j.get('pages', {}).values() if 'missing' not in p and 'invalid' not in p}
@@ -268,7 +273,7 @@ def wiki(question, game, pages=2, folder='', progress=''):
     host = host_for(game) if game else ''
     if host:
         try:
-            urls = site_search(host, question, pages)
+            urls = site_search(host, question, pages, game)
         except Exception:
             urls = []
     if not urls:

@@ -15,6 +15,7 @@ DEFAULTS = {
     'followUpSeconds': 8,        # after an answer, this long to ask a follow-up without the wake word
     'model': 'haiku',            # quick answers; "in detail" asks use deepModel
     'deepModel': 'sonnet',
+    'mic': '',                   # a microphone by name (tray → Microphone); '' = Windows' default input
     'whisper': 'base.en',        # base.en is quick on CPU; small.en hears names better
     'whisperDevice': 'cpu',      # cuda with an NVIDIA card and the CUDA libraries
     'voice': 'kokoro',           # kokoro: neural, on this PC; edge: Microsoft online; sapi: Windows' own (robotic)

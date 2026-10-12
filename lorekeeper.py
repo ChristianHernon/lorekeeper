@@ -49,6 +49,7 @@ class App:
         import ears, capture
         self.cfg, self._box = cfg, box
         self.ears = ears.Ears(cfg['whisper'], cfg['whisperDevice'])
+        self.ears.mic = cfg['mic']
         self.voice = voice.Voice(cfg['voice'], cfg['edgeVoice'], cfg['rate'], cfg['pitch'], cfg['kokoroVoice'], config.MODELS)
         self.warm = brain.Warm()
         self.screen = capture.Screen(active=lambda: bool(self.game))
@@ -437,6 +438,22 @@ def tray(app, box):
                 + [Item(g['name'], action=pin_to(g), radio=lambda n=g['name']: pinned() == n) for g in gs]
                 + [Item('Rescan installed games', action=lambda: games.build(), note='scan')])
 
+    def use_mic(name):
+        def do():
+            app.cfg['mic'] = app.ears.mic = name
+            config.save(app.cfg)
+            if app.listener.on:   # listen mode: reopen on the new mic
+                app.listener.stop()
+                app.listener.start()
+        return do
+
+    def mics_page():
+        import ears
+        names = ears.inputs()
+        cur = app.cfg['mic'] if app.cfg['mic'] in names else ''
+        return ([Item('Windows default', action=use_mic(''), radio=lambda: not app.cfg['mic'] or app.cfg['mic'] not in names)]
+                + [Item(n, action=use_mic(n), radio=lambda n=n: app.cfg['mic'] == n) for n in names])
+
     def voices_page():
         kokoro = app.cfg['voice'] == 'kokoro'
         return [Item(name, action=use_voice(v), radio=lambda v=v: kokoro and app.cfg['kokoroVoice'] == v, enabled=kokoro)
@@ -461,6 +478,7 @@ def tray(app, box):
             Item('Works outside games too', action=flip('hotkeyEverywhere'), check=lambda: app.cfg['hotkeyEverywhere']),
             Item('Listen mode', action=app.toggle_listen, check=lambda: app.listener.on),
             Item(lambda: f'Listen key: {hotkey.pretty(app.lk.combo)}', action=set_listen_key, note='change'),
+            Item('Microphone', sub=mics_page),
             Item('VOICE & ANSWERS', header=True),
             Item('Voice', sub=voices_page),
             Item('Spoilers', action=flip('spoilers'), check=lambda: app.cfg['spoilers']),

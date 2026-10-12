@@ -110,8 +110,6 @@ def backdrop(scale):
         c = rnd.choice((INK, SKY, PURPLE))
         c = tuple(int(a * 0.45 + b * 0.55) for a, b in zip(c, (16, 10, 44)))   # dimmed toward the sky
         d.rectangle((x, y, x + k - 1, y + k - 1), fill=c)
-    r = raptor(max(2, round(3 * scale)))   # bottom left, by the buttons: the secret's raptor, standing guard
-    img.paste(r, (round(18 * scale), h - r.height - round(14 * scale)), r)
     return img
 
 
@@ -121,6 +119,13 @@ def main():
         s = pct / 100
         banner(s).save(os.path.join(OUT, f'banner-{pct}.png'))
         backdrop(s).save(os.path.join(OUT, f'back-{pct}.png'))
+    for k in (3, 4, 5, 6, 8):   # the finish page's raptor, one size per display scaling, on the sky's colour where he stands
+        r = raptor(k)
+        t = 0.88   # how far down the page he stands: the backdrop's gradient there
+        sky_c = tuple(int(a + (b - a) * t) for a, b in zip((9, 9, 34), (22, 12, 54)))
+        bg = Image.new('RGB', r.size, sky_c)
+        bg.paste(r, (0, 0), r)
+        bg.save(os.path.join(OUT, f'raptor-{k}.bmp'))
     for px in (58, 64, 72, 80, 96, 116, 128):
         corner(px).save(os.path.join(OUT, f'corner-{px}.png'))
     print('\n'.join(sorted(os.listdir(OUT))))

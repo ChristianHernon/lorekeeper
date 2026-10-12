@@ -5,9 +5,35 @@ import numpy as np
 RATE = 16000
 
 
+def inputs():
+    """The microphones, each once: Windows lists every mic under several audio systems, so take the default mic's
+    system (MME, which also resamples to the 16 kHz Whisper wants)."""
+    import sounddevice as sd
+    try:
+        api = sd.query_devices(sd.default.device[0])['hostapi']
+    except Exception:
+        return []
+    return [d['name'] for d in sd.query_devices() if d['max_input_channels'] > 0 and d['hostapi'] == api
+            and 'sound mapper' not in d['name'].lower()]
+
+
+def device(name):
+    """The device number for a mic picked by name (numbers shift as devices come and go), or None: Windows' default."""
+    if not name:
+        return None
+    import sounddevice as sd
+    try:
+        api = sd.query_devices(sd.default.device[0])['hostapi']
+        return next((i for i, d in enumerate(sd.query_devices()) if d['max_input_channels'] > 0 and d['hostapi'] == api
+                     and d['name'] == name), None)
+    except Exception:
+        return None
+
+
 class Ears:
     def __init__(self, size='base.en', device='cpu'):
         self.model, self.chunks, self.stream = None, [], None
+        self.mic = ''   # a mic's name from inputs(); '' = Windows' default (unplugged: falls back to the default too)
         self.ready = threading.Event()
         threading.Thread(target=self._load, args=(size, device), daemon=True).start()   # a few seconds; the first ask waits for it
 
@@ -22,7 +48,8 @@ class Ears:
     def start(self):
         import sounddevice as sd
         self.chunks = []
-        self.stream = sd.InputStream(samplerate=RATE, channels=1, dtype='float32', callback=lambda d, *_: self.chunks.append(d.copy()))
+        self.stream = sd.InputStream(samplerate=RATE, channels=1, dtype='float32', device=device(self.mic),
+                                     callback=lambda d, *_: self.chunks.append(d.copy()))
         self.stream.start()
 
     def stop(self):
