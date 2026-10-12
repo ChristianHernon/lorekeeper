@@ -344,6 +344,30 @@ footer p { margin: 0; }
   pre { white-space: pre-wrap; overflow-wrap: normal; }   /* the clone URL wraps only at its slashes (<wbr>), never mid-word */
   pre code { font-size: .9rem; }
 }
+
+/* Easter egg: Ctrl+Alt+Space (or clicking the hint) unlocks the demo */
+.egg-trigger { background: none; border: 0; cursor: pointer; padding: 6px 8px; }
+.egg-trigger:hover .k, .egg-trigger:focus-visible .k { color: #fff; text-shadow: 0 0 8px #ffd23f; }
+.egg-flash { position: fixed; inset: 0; z-index: 90; background: #fff; pointer-events: none; animation: eggflash .45s steps(3) forwards; }
+@keyframes eggflash { from { opacity: .9; } to { opacity: 0; } }
+.egg { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(5, 5, 32, .88); }
+.egg.open { display: flex; }
+.egg-inner { position: relative; width: min(960px, 100%, calc((100vh - 250px) * 16 / 9)); text-align: center; }
+.egg-banner { font-family: var(--heading); font-size: clamp(14px, 2.6vw, 24px); color: #ffd23f; margin: 0 0 6px;
+  text-shadow: 3px 3px 0 var(--crimson-dark), 6px 6px 0 var(--shadow); animation: eggpop .5s steps(4) both; }
+.egg-sub { font-family: var(--pixel); font-size: 1.5rem; color: var(--sky); margin: 0 0 18px; }
+.egg-book { width: 120px; image-rendering: pixelated; margin: 0 auto 8px; display: block; animation: eggbook 1s steps(6) both; }
+@keyframes eggpop { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes eggbook { 0% { transform: translateY(40px) scale(.4); } 60% { transform: translateY(-14px) scale(1.15); } 100% { transform: none; } }
+.egg-player { --bc: var(--sky); --bg: #050520; padding: 0; line-height: 0; }
+.egg-player video { width: 100%; height: auto; display: block; background: #050520; }
+.egg-close { position: absolute; top: -6px; right: 0; font-family: var(--heading); font-size: 12px; color: var(--ink);
+  background: var(--crimson); border: 0; padding: 10px 12px; cursor: pointer; box-shadow: 4px 4px 0 var(--shadow); }
+.egg-close:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
+.spark { position: fixed; z-index: 85; width: 8px; height: 8px; pointer-events: none; animation: spark .9s steps(6) forwards; }
+@keyframes spark { to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .egg-flash, .spark { display: none; } .egg-banner, .egg-book { animation: none; } }
 </style>
 </head>
 <body>
@@ -376,7 +400,7 @@ footer p { margin: 0; }
     </div>
     <div class="stage">
       <img class="mascot" src="img/book.svg" alt="Pixel-art open book, the Lorekeeper mascot" width="320" height="240">
-      <p class="press">PRESS <span class="k blink">CTRL+ALT+SPACE</span></p>
+      <button class="press egg-trigger" type="button" aria-haspopup="dialog" aria-controls="egg">PRESS <span class="k blink">CTRL+ALT+SPACE</span></button>
     </div>
   </div>
 
@@ -481,6 +505,18 @@ footer p { margin: 0; }
   </div>
 </footer>
 
+
+<div class="egg" id="egg" role="dialog" aria-modal="true" aria-labelledby="egg-title" hidden>
+  <div class="egg-inner">
+    <button class="egg-close" type="button" aria-label="Close the demo">X</button>
+    <img class="egg-book" src="img/book.svg" alt="" width="120" height="90">
+    <p class="egg-banner" id="egg-title">&#9733; SECRET FOUND &#9733;</p>
+    <p class="egg-sub">You pressed the key. Here's what happens in game.</p>
+    <div class="egg-player px">
+      <video id="egg-video" src="demo.mp4" poster="og/discord.png" controls playsinline preload="none"></video>
+    </div>
+  </div>
+</div>
 <script>
 (function () {
   var root = document.documentElement;
@@ -522,6 +558,51 @@ footer p { margin: 0; }
       }
     });
   });
+})();
+
+(function () {
+  var egg = document.getElementById('egg'), video = document.getElementById('egg-video');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var last = null;
+  var colors = ['#ffd23f', '#49c6ff', '#e0284f', '#7a3cff', '#f2efe6'];
+  function sparks(x, y) {
+    if (reduce) return;
+    for (var i = 0; i < 28; i++) {
+      var s = document.createElement('span'), a = Math.random() * Math.PI * 2, r = 80 + Math.random() * 220;
+      s.className = 'spark';
+      s.style.left = x + 'px'; s.style.top = y + 'px';
+      s.style.background = colors[i % colors.length];
+      s.style.setProperty('--dx', Math.round(Math.cos(a) * r / 4) * 4 + 'px');
+      s.style.setProperty('--dy', Math.round(Math.sin(a) * r / 4) * 4 + 'px');
+      document.body.appendChild(s);
+      setTimeout(function (el) { el.remove(); }, 950, s);
+    }
+  }
+  function open() {
+    if (egg.classList.contains('open')) return;
+    last = document.activeElement;
+    if (!reduce) {
+      var f = document.createElement('div'); f.className = 'egg-flash'; document.body.appendChild(f);
+      setTimeout(function () { f.remove(); }, 500);
+    }
+    var m = document.querySelector('.mascot').getBoundingClientRect();
+    sparks(m.left + m.width / 2, m.top + m.height / 2);
+    egg.hidden = false; egg.classList.add('open');
+    egg.querySelector('.egg-close').focus();
+    try { video.currentTime = 0; var p = video.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {}
+  }
+  function close() {
+    egg.classList.remove('open'); egg.hidden = true;
+    try { video.pause(); } catch (e) {}
+    if (last && last.focus) last.focus();
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey && e.altKey && (e.code === 'Space' || e.key === ' ')) { e.preventDefault(); open(); }
+    else if (e.key === 'Escape' && egg.classList.contains('open')) close();
+  });
+  document.querySelector('.egg-trigger').addEventListener('click', open);
+  egg.querySelector('.egg-close').addEventListener('click', close);
+  egg.addEventListener('click', function (e) { if (e.target === egg) close(); });
 })();
 </script>
 </body>

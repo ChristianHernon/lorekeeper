@@ -1,0 +1,29 @@
+[
+ {
+  "game": "Enter the Gungeon",
+  "q": "What does the Gilded Hydra do?",
+  "a": "The Gilded Hydra is a shotgun that fires big bursts of piercing, bouncing bullets. Its magazine grows by one for each half heart you're missing, so taking damage raises its capacity and healing lowers it. Its flavor text: \"Heads Up!\"",
+  "secs": 3.8,
+  "usd": 0.00107277
+ },
+ {
+  "game": "The Witcher 3: Wild Hunt",
+  "q": "I found the Botchling under the house. What should I do with it?",
+  "a": "You have a choice. You can perform the elven naming ritual, Aymm Rhoin, and bury it under the threshold to turn it into a lubberkin, a household guardian that can lead you to the baron's wife and daughter. Or you can kill it and keep its blood for a ritual that gives you a different lead on Anna.",
+  "secs": 4.7,
+  "usd": 0.00114367
+ },
+ {
+  "game": "Diablo IV",
+  "q": "Is this better than my helm?",
+  "a": "Probably not. Keep the Harlequin Crest unless you're building around Tal Rasha set bonuses. The Crest's four ranks to all skills and 12.5% damage reduction are hard to replace, though its 98 Strength does nothing for you. The Loop adds 172 Intelligence, about 14% crit chance, 31% crit damage and 3% more cooldown reduction, plus 110 more armor.",
+  "secs": 7.9,
+  "usd": 0.0208448
+ },
+ {
+  "game": "Any game",
+  "q": "Clip it.",
+  "a": "Clipped. The last thirty seconds are saved.",
+  "clip": true
+ }
+]
