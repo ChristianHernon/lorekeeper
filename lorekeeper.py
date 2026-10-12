@@ -422,7 +422,7 @@ def tray(app, box):
         pystray.MenuItem('Use the screen', flip('screen'), checked=lambda _: app.cfg['screen']),
         pystray.MenuItem("This game's notes", lambda *_: app.game and (notes.add(app.game, 'notes opened') if not os.path.exists(notes.path(app.game)) else None,
                                                                      os.startfile(notes.path(app.game))), enabled=lambda _: bool(app.game)),
-        pystray.MenuItem('Share anonymous usage counts', flip('telemetry'), checked=lambda _: app.cfg['telemetry']),
+        pystray.MenuItem('Share anonymous usage counts', flip('telemetry'), checked=lambda _: app.cfg['telemetry'] is True),
         pystray.MenuItem('Settings file', lambda *_: (config.save(app.cfg), os.startfile(config.FILE))),
         pystray.MenuItem('Ask log', lambda *_: os.path.exists(LOG) and os.startfile(LOG)),
         pystray.MenuItem('Quit', quit_))
@@ -481,10 +481,14 @@ def main():
     threading.Thread(target=lk.run, daemon=True).start()
     tray(app, b)
     import telemetry
-    first = telemetry.notice(cfg)   # once: what the anonymous counts are and how to turn them off
-    b.show('Lorekeeper is ready', f"Hold {hotkey.pretty(hk.combo)} in a game and ask." + (f" Playing {app.game['name']}." if app.game else '')
-           + (f'\n\n{first}' if first else ''), stay=bool(first))
-    telemetry.start(cfg, telemetry.FIRST_WAIT if first else 0)
+    b.show('Lorekeeper is ready', f"Hold {hotkey.pretty(hk.combo)} in a game and ask." + (f" Playing {app.game['name']}." if app.game else ''))
+    if telemetry.should_ask(app.cfg):   # first run: ask once; nothing is sent before a yes
+        def ask():
+            from tkinter import messagebox
+            app.cfg['telemetry'] = bool(messagebox.askyesno('Lorekeeper', telemetry.QUESTION, parent=b.root))
+            config.save(app.cfg)
+        b.root.after(1500, ask)
+    telemetry.start(app.cfg)   # reads the setting live: a later yes in the tray starts the counts
     b.run()
 
 

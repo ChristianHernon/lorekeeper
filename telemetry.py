@@ -2,23 +2,34 @@
 
 Sent, to PostHog: a random install id (made here, tied to nothing), the event ("installed" once, "active" at most once a
 day), the app version and commit, the Windows version, and whether listen mode / RomM are on and which voice engine.
-Never: games, questions, answers, notes, paths, names, hardware. Off: tray → "Share anonymous usage counts",
-"telemetry": false in config.json, or the DO_NOT_TRACK environment variable. With no posthogKey nothing is sent at all.
+Never: games, questions, answers, notes, paths, names, hardware. Asked once on first run (nothing is sent before a yes);
+change it any time in the tray ("Share anonymous usage counts") or config.json, or set DO_NOT_TRACK. With no posthogKey
+nothing is sent and nothing is asked.
 """
 import json, os, platform, threading, time, urllib.request, uuid
 import config
 
 VERSION = '0.1'
-FILE = os.path.join(config.DIR, 'telemetry.json')   # {"id", "active": last day counted, "noticed"}
-FIRST_WAIT = 300          # first run: nothing is sent for 5 minutes, so the notice can be read and acted on
+FILE = os.path.join(config.DIR, 'telemetry.json')   # {"id", "active": last day counted}
 EVERY = 3 * 3600          # a tray app runs for days: check the day this often
-NOTICE = ('Lorekeeper counts installs anonymously: a random id, the app and Windows version, and which features are on. '
-          'Never your games, questions or answers. Turn it off in the tray: "Share anonymous usage counts".')
+QUESTION = ('Share anonymous usage counts?\n\n'
+            'Lorekeeper would send a random id, the app and Windows version, and which features are on, '
+            'so its maker can see how many people use it.\n\n'
+            'Never your games, questions, answers or anything you say. You can change this any time in the tray.')
+
+
+def _dnt():
+    return os.environ.get('DO_NOT_TRACK', '').strip() not in ('', '0')   # the cross-tool opt-out (consoledonottrack.com)
 
 
 def allowed(cfg):
-    dnt = os.environ.get('DO_NOT_TRACK', '').strip()   # the cross-tool opt-out (consoledonottrack.com)
-    return bool(cfg.get('telemetry') and cfg.get('posthogKey')) and dnt in ('', '0')
+    """Only after an explicit yes (telemetry is True, not merely unset), with a key, and no DO_NOT_TRACK."""
+    return cfg.get('telemetry') is True and bool(cfg.get('posthogKey')) and not _dnt()
+
+
+def should_ask(cfg):
+    """First run: never asked (None), there is somewhere to send to, and DO_NOT_TRACK isn't set."""
+    return cfg.get('telemetry') is None and bool(cfg.get('posthogKey')) and not _dnt()
 
 
 def _load():
@@ -33,18 +44,6 @@ def _save(st):
     os.makedirs(config.DIR, exist_ok=True)
     with open(FILE, 'w', encoding='utf-8') as f:
         json.dump(st, f)
-
-
-def notice(cfg):
-    """The one-time disclosure, or '' once it has been shown (or when nothing would be sent anyway)."""
-    if not allowed(cfg):
-        return ''
-    st = _load()
-    if st.get('noticed'):
-        return ''
-    st['noticed'] = True
-    _save(st)
-    return NOTICE
 
 
 def _commit(root=os.path.dirname(os.path.abspath(__file__))):

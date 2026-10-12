@@ -133,7 +133,7 @@ Everything per game is a plain file you can edit, in `%APPDATA%\Lorekeeper\games
 | `model` / `deepModel` | `haiku` / `sonnet` | say "in detail" or "tell me more" for the deep one |
 | `whisper` / `whisperDevice` | `base.en` / `cpu` | `small.en` hears names better; `cuda` with an NVIDIA GPU |
 | `spoilers` / `screen` | `false` / `true` | also in the tray |
-| `telemetry` | `true` | anonymous usage counts; also in the tray. See [Privacy](#privacy--usage-counts) |
+| `telemetry` | *(asked on first run)* | anonymous usage counts; also in the tray. See [Privacy](#privacy--usage-counts) |
 </details>
 
 <details>
@@ -171,9 +171,9 @@ To know how many people use it, Lorekeeper sends an **anonymous count** to [Post
 | Windows version | `Windows 11`, build `26200` |
 | whether listen mode and RomM are on, and the voice engine | `true`, `false`, `kokoro` |
 
-Never your games, questions, answers, notes, screenshots, file paths, user name, RomM address or hardware. No person profiles, and IP geolocation is turned off. The code is all in [`telemetry.py`](telemetry.py). The first time it runs, Lorekeeper says so in its box and waits five minutes before sending anything.
+Never your games, questions, answers, notes, screenshots, file paths, user name, RomM address or hardware. No person profiles, and IP geolocation is turned off. The code is all in [`telemetry.py`](telemetry.py). The first time it runs, Lorekeeper asks whether you want to share these counts, and nothing is sent unless you say yes.
 
-**To turn it off:** tray → untick **Share anonymous usage counts**. Or set `"telemetry": false` in the settings file, or set the `DO_NOT_TRACK=1` environment variable. Off means nothing is sent and no id is made.
+**To change your answer:** tray → **Share anonymous usage counts**, or `"telemetry": true/false` in the settings file. Setting the `DO_NOT_TRACK=1` environment variable also turns it off and skips the question. Off means nothing is sent and no id is made.
 
 <br>
 

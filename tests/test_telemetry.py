@@ -16,7 +16,7 @@ def fresh(tmp_path, monkeypatch):
 
 
 def cfg(**kw):
-    return {**config.DEFAULTS, 'posthogKey': KEY, **kw}
+    return {**config.DEFAULTS, 'posthogKey': KEY, 'telemetry': True, **kw}   # True = the player said yes
 
 
 def sent():
@@ -37,6 +37,7 @@ def test_installed_then_active_once_a_day(monkeypatch):
 def test_off_sends_nothing(monkeypatch):
     calls, sender = sent()
     assert telemetry.ping(cfg(telemetry=False), sender) == []
+    assert telemetry.ping(cfg(telemetry=None), sender) == []   # never asked: nothing before a yes
     assert telemetry.ping(cfg(posthogKey=''), sender) == []   # the shipped default: no key, no-op
     monkeypatch.setenv('DO_NOT_TRACK', '1')
     assert telemetry.ping(cfg(), sender) == []
@@ -54,11 +55,14 @@ def test_only_counts_and_switches_leave():
     assert '192.168' not in json.dumps(props)   # the RomM address itself never goes
 
 
-def test_notice_once_and_only_when_it_would_send():
-    assert telemetry.notice(cfg(posthogKey='')) == ''
-    assert telemetry.notice(cfg(telemetry=False)) == ''
-    assert 'Share anonymous usage counts' in telemetry.notice(cfg())
-    assert telemetry.notice(cfg()) == ''
+def test_asked_once_only_when_it_could_send(monkeypatch):
+    assert config.DEFAULTS['telemetry'] is None   # a fresh install has not been asked
+    assert telemetry.should_ask(cfg(telemetry=None))
+    assert not telemetry.should_ask(cfg(telemetry=True)) and not telemetry.should_ask(cfg(telemetry=False))   # answered
+    assert not telemetry.should_ask(cfg(telemetry=None, posthogKey=''))   # nowhere to send: don't ask
+    monkeypatch.setenv('DO_NOT_TRACK', '1')
+    assert not telemetry.should_ask(cfg(telemetry=None))
+    assert 'Never your games' in telemetry.QUESTION
 
 
 def test_send_swallows_failures(monkeypatch):
