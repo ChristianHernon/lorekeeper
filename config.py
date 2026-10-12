@@ -4,6 +4,7 @@ import json, os
 HOME = os.path.expanduser('~')
 DIR = os.environ.get('LOREKEEPER_DIR') or os.path.join(os.environ.get('APPDATA') or os.path.join(HOME, '.config'), 'Lorekeeper')   # tests point it elsewhere
 FILE = os.path.join(DIR, 'config.json')
+MODELS = os.path.join(os.environ.get('LOCALAPPDATA') or DIR, 'Lorekeeper', 'models')   # big files: not roamed
 
 DEFAULTS = {
     'hotkey': 'ctrl+alt+g',      # hold to talk, let go to ask
@@ -11,9 +12,10 @@ DEFAULTS = {
     'deepModel': 'sonnet',
     'whisper': 'base.en',        # base.en is quick on CPU; small.en hears names better
     'whisperDevice': 'cpu',      # cuda with an NVIDIA card and the CUDA libraries
-    'voice': 'edge',             # edge: Microsoft's neural voices (online); sapi: Windows' own (offline, robotic)
-    'edgeVoice': 'en-GB-SoniaNeural',   # samples: Settings folder → voices
-    'pitch': '-8Hz',             # lower = throatier; edge only
+    'voice': 'kokoro',           # kokoro: neural, on this PC; edge: Microsoft online; sapi: Windows' own (robotic)
+    'kokoroVoice': 'bf_isabella:0.75,bm_george:0.25',   # a blend reads lower; samples: tray → Voice samples
+    'edgeVoice': 'en-GB-SoniaNeural',
+    'pitch': '-8Hz',             # edge only: lower = throatier
     'rate': 0,                   # speed, -10..10
     'box': True,                 # show the question and answer in a small box too
     'boxSeconds': 12,

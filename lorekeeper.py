@@ -7,7 +7,7 @@ answers spoiler-safe ("I just beat Margit"); "spoil it" re-asks without the guar
   lorekeeper.py                 run (tray icon)
   lorekeeper.py --ask "<q>"     one question for the game in front, typed, printed (no voice)
   lorekeeper.py --games         the installed games it knows, rebuilt
-  lorekeeper.py --voices        sample mp3s of the voices, to choose edgeVoice and pitch
+  lorekeeper.py --voices        sample wavs of the voices, to choose kokoroVoice
 Settings: %APPDATA%/Lorekeeper/config.json. Log: log.jsonl beside it.
 """
 import json, os, sys, threading, time
@@ -23,9 +23,6 @@ import brain, commands, config, games, lookup, notes, voice  # noqa: E402
 
 LOG = os.path.join(config.DIR, 'log.jsonl')
 TURN_SECS = 600
-VOICES = ['en-GB-SoniaNeural', 'en-GB-LibbyNeural', 'en-US-AvaNeural', 'en-US-AriaNeural', 'en-US-MichelleNeural',
-          'en-US-JennyNeural', 'en-AU-NatashaNeural', 'en-IE-EmilyNeural']   # follow-ups ("and where is that?") see the last few turns from these ten minutes
-
 
 def log(row):
     os.makedirs(config.DIR, exist_ok=True)
@@ -38,7 +35,7 @@ class App:
         import ears, capture
         self.cfg, self._box = cfg, box
         self.ears = ears.Ears(cfg['whisper'], cfg['whisperDevice'])
-        self.voice = voice.Voice(cfg['voice'], cfg['edgeVoice'], cfg['rate'], cfg['pitch'])
+        self.voice = voice.Voice(cfg['voice'], cfg['edgeVoice'], cfg['rate'], cfg['pitch'], cfg['kokoroVoice'], config.MODELS)
         self.warm = brain.Warm()
         self.screen = capture.Screen(active=lambda: bool(self.game))
         self.game, self.gen, self.frames = None, 0, []
@@ -259,9 +256,9 @@ def main():
     cfg = config.load()
     if args[:1] == ['--games']:
         return print('\n'.join(f"{g['name']}  [{g['source']}]  {g['dir']}" for g in games.build()) or 'no games found')
-    if args[:1] == ['--voices']:   # sample mp3s to choose edgeVoice and pitch by ear
+    if args[:1] == ['--voices']:   # sample wavs to choose kokoroVoice by ear
         folder = os.path.join(config.DIR, 'voices')
-        voice.samples(folder, VOICES)
+        voice.samples(folder, config.MODELS)
         return print(folder)
     if args[:1] == ['--ask']:
         q = ' '.join(args[1:])
