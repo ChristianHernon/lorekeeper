@@ -27,7 +27,7 @@
 <tr>
 <td width="25%" valign="top" align="center"><img src="docs/img/mic.svg" width="48" alt=""><br><b>1 · Hold &amp; ask</b><br><sub>Hold the hotkey and talk, or turn on listen mode and say "Lorekeeper, …". Whisper hears you <i>on your PC</i>; audio never leaves it.</sub></td>
 <td width="25%" valign="top" align="center"><img src="docs/img/pad.svg" width="48" alt=""><br><b>2 · Game detected</b><br><sub>Matched from your Steam, Epic and GOG installs. Emulator? Say "I'm playing Chrono Trigger" or pick it in the tray.</sub></td>
-<td width="25%" valign="top" align="center"><img src="docs/img/scroll.svg" width="48" alt=""><br><b>3 · Wiki + Claude</b><br><sub>That game's wiki is searched directly, then Claude answers through Claude Code on the plan you already have (no API key; about 3–5 s), or your own Ollama, LM Studio or OpenAI.</sub></td>
+<td width="25%" valign="top" align="center"><img src="docs/img/scroll.svg" width="48" alt=""><br><b>3 · Wiki + your AI</b><br><sub>That game's wiki is searched directly, then Claude answers through Claude Code on the plan you already have (no API key; about 3–5 s), or your own Ollama, LM Studio or OpenAI.</sub></td>
 <td width="25%" valign="top" align="center"><img src="docs/img/speaker.svg" width="48" alt=""><br><b>4 · Hear it</b><br><sub>A natural voice reads it a sentence at a time, offline. A small box shows it too, on your second monitor.</sub></td>
 </tr>
 </table>
@@ -68,7 +68,7 @@ You need **Windows 10 or 11** (Mac is coming soon) and one of: a **Claude Pro or
 
 1. **[Download Lorekeeper-Setup.exe](https://github.com/FindlayHi/lorekeeper/releases/latest/download/Lorekeeper-Setup.exe)** and run it. There's no admin prompt, and it installs just for you.
 2. Windows may say *"Windows protected your PC"*, because the installer isn't code-signed yet. Click **More info → Run anyway**.
-3. Lorekeeper starts in the tray. The first time, it downloads its voice (about 120 MB), and if [Claude Code](https://claude.com/claude-code) isn't installed it offers to install it and helps you sign in.
+3. Lorekeeper starts in the tray. The first time, it downloads its voice (about 120 MB), and if [Claude Code](https://claude.com/claude-code) isn't installed it offers to install it and helps you sign in. Using Ollama, LM Studio or OpenAI instead? Say no, then pick it in the tray under **AI**.
 
 Then launch a game and hold <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd>.
 
