@@ -19,10 +19,17 @@ if sys.platform == 'win32':
         except (AttributeError, ValueError):
             pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import brain, commands, config, games, listen, lookup, notes, voice  # noqa: E402
+import brain, capture, commands, config, games, gear, listen, lookup, notes, voice  # noqa: E402
 
 LOG = os.path.join(config.DIR, 'log.jsonl')
 TURN_SECS = 600
+
+def _rm(path):
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
 
 def log(row):
     os.makedirs(config.DIR, exist_ok=True)
@@ -195,6 +202,10 @@ class App:
             games.unpin()
             self.game, _ = games.current()
             return self.say(q, f"Detecting games again. Now: {self.game['name']}." if self.game else 'Detecting games again.')
+        if action.startswith('gear') or action == 'snap':
+            if not g:
+                return self.say(q, "Which game? Say I'm playing, then the name.")
+            return self.gear_command(q, action, arg, g)
         if action == 'note':
             if not g:
                 return self.say(q, "Which game? Say I'm playing, then the name.")
@@ -207,27 +218,55 @@ class App:
             self.spoil_next = True
             return self.answer(self.last_q, self.gen)
 
+    def gear_command(self, q, action, arg, g):
+        if action == 'gear_list':
+            return self.say(q, gear.summary(g))
+        if action == 'gear_forget':
+            where = gear.slot(arg)
+            return self.say(q, f'Forgot your {where}.' if gear.forget(g, where) else f'No {where} was saved.')
+        if not self.frames:
+            return self.say(q, "I can't see the screen, so I can't save it.")
+        if action == 'snap':
+            capture.save_shot(notes.FOLDER, g, self.frames[-1][1], arg)
+            return self.say(q, f'Saved the screen as {arg}.' if arg else 'Saved the screen.')
+        where = gear.slot(arg)   # gear_save: read the hovered tooltip
+        if self.box:
+            self.box.show(q, f'Reading the item for your {where}…', stay=True)
+        shots = capture.Screen.files(self.frames[-1:], '')
+        try:
+            item = brain.extract(shots, self.cfg['model'])
+        finally:
+            for path, _ in shots:
+                _rm(path)
+        if item.get('error') or not item.get('name'):
+            return self.say(q, "I couldn't read an item there. Hover over it so its tooltip shows, then say it again.")
+        gear.save(g, where, item)
+        log({'game': g['name'], 'q': q, 'a': f'saved {where}', 'item': item})
+        return self.say(q, f"Saved {item['name']} as your {where}.")
+
     def answer(self, q, gen):
         started = time.time()
         spoilers = self.cfg['spoilers'] or self.spoil_next
         self.spoil_next = False
-        model = self.cfg['deepModel'] if brain.DEEP.search(q) else self.cfg['model']
+        shots = capture.Screen.files(self.frames, q) if self.cfg['screen'] and capture.wants(q) else []
+        saved = capture.saved_for(notes.FOLDER, self.game, q)   # on disk for good: never deleted below
+        kit = gear.text(self.game) if gear.wants(q) else ''
+        model = self.cfg['deepModel'] if brain.DEEP.search(q) or (kit or shots) and gear.wants(q) else self.cfg['model']   # gear math: the bigger model
         p = self.warm.take(model, spoilers)
         if not p:
             return self.say(q, 'Claude Code is not installed. Install it and sign in, then ask again.')
-        import capture
-        shots = capture.Screen.files(self.frames, q) if self.cfg['screen'] and capture.wants(q) else []
-        if capture.wants(q) and self.cfg['screen'] and not shots:
+        if capture.wants(q) and self.cfg['screen'] and not shots and not saved:
             self.voice.say("I couldn't see the screen, so going by your words.")
         now = time.time()
         self.turns = [t for t in self.turns if now - t['t'] < TURN_SECS][-3:]
-        wiki = '' if shots else lookup.wiki(q, self.game and self.game['name'])   # a screenshot names the thing; the model searches then
-        text = brain.request(q, self.game, notes.read(self.game), self.turns, wiki)
+        wiki = '' if shots or saved or kit else lookup.wiki(q, self.game and self.game['name'])   # a screenshot names the thing; the model searches then
+        text = brain.request(q, self.game, notes.read(self.game), self.turns, wiki, kit)
         spoken = []
 
         def streamed(s):   # speak each sentence as it completes; the last, maybe partial, waits
             if gen != self.gen:
                 return
+            s = s.split('NOTE:')[0]   # the saved note is never spoken
             parts = voice.split(s)[:-1]
             if parts[:len(spoken)] != spoken:
                 return   # a new message began (text before a search): wait for the result
@@ -237,13 +276,13 @@ class App:
             if self.box:
                 self.box.show(q, s, stay=True)
         try:
-            a, usd = brain.ask(p, text, shots, streamed)
+            a, usd = brain.ask(p, text, saved + shots, streamed)
         finally:
             for path, _ in shots:
-                try:
-                    os.remove(path)
-                except OSError:
-                    pass
+                _rm(path)
+        a, learned = brain.split_note(a)
+        if learned and self.game:
+            notes.add(self.game, learned + ' (learned)')
         if gen != self.gen:
             return
         rest = voice.split(a)
@@ -259,7 +298,7 @@ class App:
         self.last, self.last_q = a, q
         self.turns.append({'t': time.time(), 'q': q, 'a': a})
         log({'game': self.game and self.game['name'], 'q': q, 'a': a, 'usd': round(usd, 5), 'secs': round(time.time() - started, 1),
-             'model': model, 'spoilers': spoilers, 'shots': len(shots)})
+             'model': model, 'spoilers': spoilers, 'shots': len(shots), 'saved': len(saved), 'gear': bool(kit), 'learned': learned})
 
 
 def tray(app, box):
@@ -360,8 +399,11 @@ def main():
         t = time.time()
         wiki = lookup.wiki(q, g and g['name'])
         print(f'(wiki {len(wiki)} chars in {time.time() - t:.1f}s)')
-        a, usd = brain.ask(p, brain.request(q, g, notes.read(g), [], wiki))
-        return print(f'{a}\n(${usd:.4f}, {time.time() - t:.1f}s)')
+        a, usd = brain.ask(p, brain.request(q, g, notes.read(g), [], wiki, gear.text(g) if gear.wants(q) else ''))
+        a, learned = brain.split_note(a)
+        if learned and g:
+            notes.add(g, learned + ' (learned)')
+        return print(f'{a}\n(${usd:.4f}, {time.time() - t:.1f}s)' + (f'\n[noted: {learned}]' if learned else ''))
     import box as boxmod, hotkey
     if not brain.claude_ok():
         print('Claude Code (claude) is not on PATH: install it and sign in first.', file=sys.stderr)

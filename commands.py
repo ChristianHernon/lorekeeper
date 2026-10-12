@@ -10,6 +10,13 @@ RULES = [
     ('spoil', r'(?:(?:ok(?:ay)?,? )?spoil (?:it|that|away)(?: for me)?|spoilers? on|go ahead and spoil(?: it)?)'),
     ('playing', r"(?:i'?m|i am|we'?re) (?:now )?playing (.+)"),
     ('auto', r'(?:detect (?:the )?game|auto(?:matic)?(?: detect)?|forget (?:the|which) game)'),
+    ('gear_save', r'(?:save|remember|store|log|record|track) (?:this|that|it)(?: item| one)? (?:as|for) (my .+)'),
+    ('gear_save', r'(?:this|that) is my (?:new )?(.+)'),
+    ('gear_save', r"(?:i )?(?:just )?equipped (?:this|that|it) (?:as|for|in) (my .+)"),
+    ('gear_forget', r'(?:forget|clear|delete|remove) my (?!notes)(.+)'),
+    ('gear_list', r"(?:what(?:'s| is) my gear|what gear (?:do i have|have i saved)|list my gear|what (?:have i|did i) (?:saved|save))"),
+    ('snap', r'(?:remember|save|keep|screenshot|snap) (?:this|that)(?: screen| spot| place| map| clue| puzzle| code| sign| page)?(?: (?:as|for|called) (.+))?'),
+    ('snap', r'take a (?:screenshot|picture|snap)(?: (?:of this|as|for|called) ?(.*))?'),
     ('note', r'(?:note|remember|note that|make a note|take a note)[:,]? (.+)'),
     ('note', r"((?:i'?m|i am) (?:at|in|on|up to|past) .+|i (?:just )?(?:beat|killed|finished|defeated|reached|unlocked|chose|picked|sided with|got to) .+)"),
 ]
@@ -25,7 +32,7 @@ def parse(text):
     for action, rx in RULES:
         m = re.fullmatch(rx, t, re.I)
         if m:
-            arg = m.group(1).strip(' .') if m.groups() else ''
+            arg = (m.group(1) or '').strip(' .') if m.groups() else ''
             if action == 'note' and NOT_PROGRESS.search(arg) and not t.lower().startswith(('note', 'remember', 'make a note', 'take a note')):
                 return None   # "I'm at Stormveil, where do I go?" is a question
             if action == 'playing' and NOT_PROGRESS.search(arg):

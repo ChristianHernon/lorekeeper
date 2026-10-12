@@ -17,13 +17,24 @@ Rather not hold a key? Press **Ctrl+Alt+L** (or tray → **Listen mode**, or say
 
 The mic stays open, but Whisper only runs when someone's talking, so it's close to free while you're quiet. It ignores everything while Lorekeeper is speaking (so it doesn't hear itself through speakers), while you hold the hotkey, and when no game is in front. Chatting with friends is ignored unless you say the name. Press Ctrl+Alt+L again or say *"stop listening"* to turn it off.
 
+## Gear (Diablo and friends)
+Hover an item so its tooltip shows and say *"save this as my helm"*. Lorekeeper reads every stat into that game's gear file. Later:
+- *"Is this better than my helm?"* gives the verdict first, then the two or three numbers that decide it, for your build. It uses Sonnet for gear math.
+- *"What's my gear?"* lists what's saved. *"Forget my second ring"* removes one.
+
+Slots understand the usual words (helmet/head, chest piece, off hand, second ring…). It works with any game that shows item tooltips.
+
+## Memory
+- **Screen:** the last 5 seconds at one frame a second, plus the last 10 minutes at one frame every 10 seconds, all in memory. *"What did that sign say two minutes ago?"* and *"what was that chest earlier?"* send those frames.
+- **Saved screens:** *"Remember this as the vault code"* keeps it on disk for that game. *"What was the vault code?"* brings it back.
+- **Notes that learn:** besides *"I just beat Margit"* and *"note: …"*, Lorekeeper writes down lasting things your questions reveal: your class, build, act, story choices. Answers fit your run, and the spoiler line moves with you. Everything per game lives in `%APPDATA%\Lorekeeper\games\` as plain files: `<game>.md` (notes), `<game>.gear.json`, `<game>/saved/`.
+
 ## How it works
 - **Ears:** Whisper (faster-whisper) runs on your PC, so audio never leaves it. It's hinted with the game's name and the names in your notes, so it spells "Malenia" right.
 - **Game:** the exe of the window in front, matched against the games Steam, Epic and GOG installed. For an emulator, or if it guesses wrong, say *"I'm playing Chrono Trigger"* or pick from the tray menu.
 - **Answer:** the game's wiki pages are fetched first (wiki.gg and Fandom page source, which includes infobox quotes), then `claude -p` on your Claude plan answers from them, or searches if they don't cover it. That's about 3–4 s and about 0.1¢ per ask with Haiku. Say *"in detail"* or *"tell me more"* to use Sonnet.
 - **Voice:** [Kokoro](https://github.com/thewh1teagle/kokoro-onnx), a neural voice that runs on your PC. The default is a lower blend of a British woman's voice. Answers are spoken a sentence at a time as they arrive. Tap the hotkey to stop it.
 - **Box:** a small box shows the question and answer, on a second monitor if you have one. Click it to copy.
-- **Screen:** while a game is in front, one frame a second is kept in memory (last 5). Only questions like "this" or "just got" send frames; "just" sends the last few, so a faded pickup banner still counts.
 
 ## Setup
 Needs Windows, Python 3.10+, and [Claude Code](https://claude.com/claude-code) signed in to a Pro or Max plan.

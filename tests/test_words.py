@@ -50,3 +50,28 @@ def test_notes_and_names():
 def test_split_for_speech():
     assert voice.split('**Shadow Clone** doubles you. See https://x.y/z for more.\nIts flavor text: "Me too."') == \
         ['Shadow Clone doubles you.', 'See  for more.', 'Its flavor text: "Me too."']
+
+
+def test_gear_and_snap_commands():
+    p = commands.parse
+    assert p('Save this as my helm.') == ('gear_save', 'my helm')
+    assert p('This is my new chest piece') == ('gear_save', 'chest piece')
+    assert p('Forget my second ring') == ('gear_forget', 'second ring')
+    assert p("What's my gear?") == ('gear_list', '')
+    assert p('Remember this.') == ('snap', '')
+    assert p('Remember this as the vault code') == ('snap', 'the vault code')
+    assert p('Remember: I sided with the Emperor') == ('note', 'I sided with the Emperor')
+    assert p('Is this better than my helm?') is None
+
+
+def test_gear_slots_and_wants():
+    import gear
+    assert gear.slot('my helmet') == 'helm' and gear.slot('second ring') == 'ring 2' and gear.slot('chest piece') == 'chest'
+    assert gear.slot('my weird totem') == 'weird totem'
+    assert gear.wants('is this better than my helm') and gear.wants('what is my dps') and not gear.wants('who is Ranni')
+
+
+def test_split_note():
+    assert brain.split_note('Yes, swap it.\nNOTE: Sorcerer, crit build') == ('Yes, swap it.', 'Sorcerer, crit build')
+    assert brain.split_note('Yes, swap it. NOTE: Act 3') == ('Yes, swap it.', 'Act 3')
+    assert brain.split_note('No notes here.') == ('No notes here.', '')
