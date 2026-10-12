@@ -52,8 +52,8 @@ class App:
         self.ears.mic = cfg['mic']
         self.voice = voice.Voice(cfg['voice'], cfg['edgeVoice'], cfg['rate'], cfg['pitch'], cfg['kokoroVoice'], config.MODELS)
         self.warm = brain.Warm()
-        self.screen = capture.Screen(active=lambda: bool(self.game))
         self.game, self.gen, self.frames = None, 0, []
+        self.screen = capture.Screen(active=lambda: bool(self.game))
         self.turns, self.last, self.last_q, self.spoil_next = [], '', '', False
         self.down_at, self._spoke_at, self.hk = 0, 0, None
         self.listener = listen.Listener(self.ears, self.heard, self.listen_muted, cfg['followUpSeconds'], self.woke, self.hint)
