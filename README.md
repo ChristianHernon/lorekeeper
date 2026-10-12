@@ -70,6 +70,7 @@ git clone https://github.com/FindlayHi/lorekeeper
 cd lorekeeper
 .\setup.ps1
 ```
+No git? Download the [latest release](https://github.com/FindlayHi/lorekeeper/releases/latest) (**Source code (zip)**), unzip it, and run `.\setup.ps1` in that folder.
 
 Then start **Lorekeeper** from the Start menu. It lives in the tray. Launch a game and hold <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd>.
 
