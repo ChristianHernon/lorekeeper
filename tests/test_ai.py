@@ -144,7 +144,7 @@ def test_warm_keeps_an_http_session_for_the_same_model(server):
 
 
 def test_models_lists_the_server_ids(server):
-    Fake.reply = (200, json.dumps({'object': 'list', 'data': [{'id': 'qwen2.5vl:3b'}, {'id': 'Gemma3:4b'}, {'id': 'qwen2.5vl:3b'}]}))
+    Fake.reply = (200, json.dumps({'object': 'list', 'data': [{'id': 'qwen2.5vl:3b'}, {'id': 'Gemma3:4b'}, {'id': 'qwen2.5vl:3b'}, {'id': 'text-embedding-nomic-embed-text-v1.5'}]}))
     assert brain.models() == ['Gemma3:4b', 'qwen2.5vl:3b']
     assert Fake.got[0][1] == '/v1/models'
 

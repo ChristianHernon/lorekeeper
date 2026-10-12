@@ -357,6 +357,9 @@ def ask_http(p, text, shots=(), on_text=lambda s: None, cfg=None):
     return unthink(raw).strip() or 'No answer came back.'
 
 
+EMBED = re.compile(r'embed', re.I)   # LM Studio lists its embedding model too: it can't answer
+
+
 def models(cfg=None):
     """The server's model ids (GET /models), sorted; raises with explain()'s message when it can't."""
     cfg = CFG if cfg is None else cfg
@@ -365,7 +368,7 @@ def models(cfg=None):
             data = json.load(r).get('data') or []
     except Exception as e:
         raise ServerError(explain(e, cfg)) from None
-    return sorted({m['id'] for m in data if isinstance(m, dict) and m.get('id')}, key=str.lower)
+    return sorted({m['id'] for m in data if isinstance(m, dict) and m.get('id') and not EMBED.search(m['id'])}, key=str.lower)
 
 
 def test(cfg=None):
