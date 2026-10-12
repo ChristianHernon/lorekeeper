@@ -163,6 +163,16 @@ begin
   SaveStringToFile(ConfigPath(), S, False);
 end;
 
+// Close a running Lorekeeper here, at once. Left to the Restart Manager (CloseApplications), it waits ~30 s for the tray app to
+// answer a close request it never answers, and the wizard can't be moved or redrawn meanwhile.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Code: Integer;
+begin
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/IM Lorekeeper.exe /T /F', '', SW_HIDE, ewWaitUntilTerminated, Code);
+  Result := '';
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
