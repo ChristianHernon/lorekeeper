@@ -133,6 +133,7 @@ Everything per game is a plain file you can edit, in `%APPDATA%\Lorekeeper\games
 | `model` / `deepModel` | `haiku` / `sonnet` | say "in detail" or "tell me more" for the deep one |
 | `whisper` / `whisperDevice` | `base.en` / `cpu` | `small.en` hears names better; `cuda` with an NVIDIA GPU |
 | `spoilers` / `screen` | `false` / `true` | also in the tray |
+| `telemetry` | `true` | anonymous usage counts; also in the tray. See [Privacy](#privacy--usage-counts) |
 </details>
 
 <details>
@@ -156,6 +157,23 @@ python lorekeeper.py --games                          # installed games it knows
 python lorekeeper.py --voices                         # sample wavs of every voice
 ```
 </details>
+
+## Privacy & usage counts
+
+Your voice and its transcription stay on your PC. Your question (and a screenshot, when it asks about the screen) goes to Claude through your own Claude Code login, and wiki searches go to the game's wiki. Nothing else about what you play or say leaves your PC.
+
+To know how many people use it, Lorekeeper sends an **anonymous count** to [PostHog](https://posthog.com): an `installed` event once, and an `active` event at most once a day. Each carries only:
+
+| | Example |
+|---|---|
+| a random install id, made on your PC and tied to nothing | `3f9c…` (in `%APPDATA%\Lorekeeper\telemetry.json`) |
+| Lorekeeper's version and commit | `0.1`, `ab57865` |
+| Windows version | `Windows 11`, build `26200` |
+| whether listen mode and RomM are on, and the voice engine | `true`, `false`, `kokoro` |
+
+Never your games, questions, answers, notes, screenshots, file paths, user name, RomM address or hardware. No person profiles, and IP geolocation is turned off. The code is all in [`telemetry.py`](telemetry.py). The first time it runs, Lorekeeper says so in its box and waits five minutes before sending anything.
+
+**To turn it off:** tray → untick **Share anonymous usage counts**. Or set `"telemetry": false` in the settings file, or set the `DO_NOT_TRACK=1` environment variable. Off means nothing is sent and no id is made.
 
 <br>
 
