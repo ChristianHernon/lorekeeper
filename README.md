@@ -63,16 +63,25 @@
 
 ## Install
 
-You need **Windows 10 or 11** (Mac is coming soon), **Python 3.10+**, and [**Claude Code**](https://claude.com/claude-code) signed in to a Claude Pro or Max plan.
+You need **Windows 10 or 11** (Mac is coming soon) and a **Claude Pro or Max** plan.
+
+1. **[Download Lorekeeper-Setup.exe](https://github.com/FindlayHi/lorekeeper/releases/latest/download/Lorekeeper-Setup.exe)** and run it. There's no admin prompt, and it installs just for you.
+2. Windows may say *"Windows protected your PC"*, because the installer isn't code-signed yet. Click **More info → Run anyway**.
+3. Lorekeeper starts in the tray. The first time, it downloads its voice (about 120 MB), and if [Claude Code](https://claude.com/claude-code) isn't installed it offers to install it and helps you sign in.
+
+Then launch a game and hold <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd>.
+
+<details>
+<summary><b>From source</b> (Python 3.10+)</summary>
+<br>
 
 ```powershell
 git clone https://github.com/FindlayHi/lorekeeper
 cd lorekeeper
 .\setup.ps1
 ```
-No git? Download the [latest release](https://github.com/FindlayHi/lorekeeper/releases/latest) (**Source code (zip)**), unzip it, and run `.\setup.ps1` in that folder.
-
-Then start **Lorekeeper** from the Start menu. It lives in the tray. Launch a game and hold <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>Space</kbd>.
+`setup.ps1` makes a virtual environment, installs the dependencies, downloads the voice and adds a Start menu shortcut. To build the installer yourself: `pyinstaller packaging/lorekeeper.spec`, then `iscc /DAppVersion=x.y.z packaging\lorekeeper.iss`. GitHub Actions does both on every version tag.
+</details>
 
 <details>
 <summary><b>🕹️ Works with RomM (and any emulator)</b></summary>

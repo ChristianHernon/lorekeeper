@@ -215,7 +215,7 @@ class Panel:
         if x is None:
             x, y = self.root.winfo_pointerx(), self.root.winfo_pointery()
         sx, sy = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
-        px = min(max(0, x - cw + 8), sx - cw)
+        px = min(max(0, x - cw + 8), sx - cw - FLY_W + 16)   # leave room on the right for a sub-menu to open there
         py = y - ch - 6 if y - ch - 6 > 0 else min(y + 6, sy - ch)   # above the cursor (the tray is at the bottom), else below
         self.main.show(px, py)
         try:   # a tray click lets this process take the foreground; without it Esc and click-away can't work
@@ -245,7 +245,7 @@ class Panel:
 
     # the flyout
     def fly(self, pane, focus=False):
-        """Open the sub-menu of the main menu's selected row beside it (left of the menu: the tray sits at the right)."""
+        """Open the sub-menu of the main menu's selected row beside it: to the right, or the left if the screen ends first."""
         it = pane.item()
         if pane is not self.main or not it or it.sub is None:
             return
@@ -261,7 +261,8 @@ class Panel:
         mx, my = self.main.win.winfo_rootx(), self.main.win.winfo_rooty()
         top = my + self.main.rows[self.main.sel][0] - 40   # level with the row it came from
         sx, sy = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
-        fx = mx - fw + 16 if mx - fw + 16 >= 0 else mx + self.main.win.winfo_width() - 16   # over the main menu's border and margin, clear of its text
+        right = mx + self.main.win.winfo_width() - 16   # over the main menu's border and shadow, clear of its text
+        fx = right if right + fw <= sx else max(0, mx - fw + 16)
         self.flyout.show(fx, max(0, min(top, sy - fh - 8)))
         self.flyout.win.lift(self.main.win)   # over the main menu's edge, like a real flyout
         if focus:

@@ -346,6 +346,9 @@ footer p { margin: 0; }
 
 /* Easter egg: Ctrl+Alt+Space (or clicking the hint) unlocks the demo */
 .soon { color: #ffd23f; }
+.btn.dl { font-size: 14px; padding: 18px 22px; margin-bottom: 12px; }
+.src { margin-top: 18px; color: var(--ink-dim); }
+.src summary { cursor: pointer; font-family: var(--pixel); font-size: 1.3rem; color: var(--sky); margin-bottom: 12px; }
 .book-wrap { position: relative; display: inline-block; animation: bob 1.6s steps(2) infinite; }   /* the play button floats with the book */
 .book-play { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); display: flex; flex-direction: column;
   align-items: center; gap: 8px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink); }
@@ -446,7 +449,7 @@ footer p { margin: 0; }
       <h1><span>Hold a key.</span><span class="c2">Ask out loud.</span><span class="c3">Hear the answer.</span></h1>
       <p class="lede">Lorekeeper <strong>knows which game you're in</strong> and answers in your ear: lore, quest steps, items and builds, even clipping the moment. All <strong>without spoilers</strong>, and no alt-tabbing.</p>
       <div class="ctas">
-        <a class="btn px primary" href="#install"><span class="arr" aria-hidden="true"></span>Install</a>
+        <a class="btn px primary" href="#install"><span class="arr" aria-hidden="true"></span>Download</a>
         <a class="btn px secondary" href="https://github.com/FindlayHi/lorekeeper">View on GitHub</a>
       </div>
     </div>
@@ -542,19 +545,23 @@ footer p { margin: 0; }
         <h3>Requirements</h3>
         <ul>
           <li>Windows 10 or 11 <span class="soon">(Mac coming soon)</span></li>
-          <li>Python 3.10+</li>
-          <li>Claude Code, signed in to a Pro or Max plan</li>
+          <li>A Claude Pro or Max plan</li>
+          <li>That's it: Lorekeeper sets up its voice and Claude Code for you on first run</li>
         </ul>
       </div>
       <div>
-        <div class="code px">
-          <div class="code-bar"><span>PowerShell</span><button class="copy" type="button" data-copy="install-cmd" aria-label="Copy install commands">COPY</button></div>
-          <pre><code id="install-cmd"><span class="p" aria-hidden="true">&gt; </span>git clone https://<wbr>github.com/<wbr>FindlayHi/<wbr>lorekeeper
+        <a class="btn px primary dl" href="https://github.com/FindlayHi/lorekeeper/releases/latest/download/Lorekeeper-Setup.exe"><span class="arr" aria-hidden="true"></span>Download for Windows</a>
+        <p class="after">Run <strong>Lorekeeper-Setup.exe</strong>: no admin prompt, about 85 MB. If Windows says <em>"Windows protected your PC"</em>, click <strong>More info &rarr; Run anyway</strong> (the installer isn't code-signed yet).</p>
+        <p class="after">Lorekeeper starts in the tray. Launch a game and hold <kbd>Ctrl+Alt+Space</kbd>.</p>
+        <details class="src">
+          <summary>From source (Python 3.10+)</summary>
+          <div class="code px">
+            <div class="code-bar"><span>PowerShell</span><button class="copy" type="button" data-copy="install-cmd" aria-label="Copy install commands">COPY</button></div>
+            <pre><code id="install-cmd"><span class="p" aria-hidden="true">&gt; </span>git clone https://<wbr>github.com/<wbr>FindlayHi/<wbr>lorekeeper
 <span class="p" aria-hidden="true">&gt; </span>cd lorekeeper
 <span class="p" aria-hidden="true">&gt; </span>.\setup.ps1</code></pre>
-        </div>
-        <p class="after">No git? Download the <a href="https://github.com/FindlayHi/lorekeeper/releases/latest">latest release</a> zip, unzip it, and run <code>.\setup.ps1</code> in that folder.</p>
-        <p class="after">Then start <strong>Lorekeeper</strong> from the Start menu, launch a game, and hold <kbd>Ctrl+Alt+Space</kbd>.</p>
+          </div>
+        </details>
         <p class="sr-status" id="copy-status" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></p>
       </div>
     </div>
@@ -563,7 +570,7 @@ footer p { margin: 0; }
   <div class="wrap final">
     <h2>Ready, player one?</h2>
     <p>Free, open source, and runs on the Claude plan you already have.</p>
-    <a class="btn px primary" href="https://github.com/FindlayHi/lorekeeper"><span class="arr" aria-hidden="true"></span>Get Lorekeeper</a>
+    <a class="btn px primary" href="https://github.com/FindlayHi/lorekeeper/releases/latest/download/Lorekeeper-Setup.exe"><span class="arr" aria-hidden="true"></span>Download for Windows</a>
   </div>
 </main>
 

@@ -20,6 +20,12 @@ if sys.platform == 'win32':
         except (AttributeError, ValueError):
             pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+FROZEN = getattr(sys, 'frozen', False)   # the installed app (PyInstaller): no console, so output goes to a log file
+if FROZEN:
+    _logdir = os.path.join(os.environ.get('APPDATA') or os.path.expanduser('~'), 'Lorekeeper')
+    os.makedirs(_logdir, exist_ok=True)
+    sys.stdout = sys.stderr = open(os.path.join(_logdir, 'app.log'), 'a', encoding='utf-8', buffering=1)
+    print(f"--- {__import__('time').strftime('%Y-%m-%d %H:%M:%S')} Lorekeeper starting", flush=True)
 import brain, capture, commands, config, games, gear, listen, lookup, notes, romm, voice  # noqa: E402
 
 LOG = os.path.join(config.DIR, 'log.jsonl')
@@ -482,11 +488,43 @@ def tray(app, box):
     return icon
 
 
+def selftest(ci=False):
+    """ci: a build machine with no mic, speakers, screen or Claude Code; still checks every library loads and works."""
+    ok = True
+
+    def check(name, fn):
+        nonlocal ok
+        try:
+            print(f'ok   {name}: {fn()}', flush=True)
+        except Exception as e:
+            ok = False
+            print(f'FAIL {name}: {type(e).__name__}: {e}', flush=True)
+    import tempfile
+    import numpy as np
+    check('voice (kokoro)', lambda: (lambda v: (v._load(), f'{len(v._kokoro.create("Lorekeeper test.", voice="af_nicole")[0])} samples'))(
+        voice.Voice('sapi', models=config.MODELS))[1] if not __import__('firstrun').missing_models() or ci and __import__('firstrun').download_models() else 'model not downloaded yet (first run fetches it)')
+    check('ears (whisper)', lambda: (lambda e: (e.ready.wait(300), repr(e.text(np.zeros(16000, dtype='float32')))))(
+        __import__('ears').Ears(config.load()['whisper'], 'cpu'))[1])
+    if not ci:
+        check('screen', lambda: f"{len(capture.Screen(active=lambda: False).now())} frame(s)")
+    check('tray + hotkey libs', lambda: (__import__('pystray'), __import__('hotkey').parse('ctrl+alt+space'))[1])
+    check('screen libs', lambda: (__import__('dxcam'), __import__('PIL.ImageGrab'))[1].__name__)
+    if not ci:
+        check('sound out', lambda: __import__('sounddevice').query_devices(kind='output')['name'])
+    check('sound libs', lambda: (__import__('sounddevice'), __import__('soundfile'))[1].__name__)
+    check('claude code', lambda: 'found' if brain.claude_ok() else 'not installed (first run offers to install it)')
+    check('games index', lambda: f'{len(games.build())} games')
+    print('SELFTEST', 'PASSED' if ok else 'FAILED', flush=True)
+    return 0 if ok else 1
+
+
 def main():
     args = sys.argv[1:]
     cfg = config.load()
     if args[:1] == ['--games']:
         return print('\n'.join(f"{g['name']}  [{g['source']}]  {g['dir']}" for g in games.build()) or 'no games found')
+    if args[:1] == ['--selftest']:   # the installed build's smoke test: every native piece loads and works
+        return sys.exit(selftest(ci='--ci' in args))
     if args[:1] == ['--romm-connect']:   # same as tray → RomM → Connect RomM…
         done = threading.Event()
         romm.pair(args[1] if len(args) > 1 else input('RomM address: '),
@@ -540,6 +578,8 @@ def main():
             config.save(app.cfg)
         b.root.after(1500, ask)
     telemetry.start(app.cfg)   # reads the setting live: a later yes in the tray starts the counts
+    import firstrun
+    firstrun.run(app, b)   # an installed copy: fetch the voice model, offer to install Claude Code
     b.run()
 
 

@@ -1,0 +1,52 @@
+# Build the Windows installer and attach it to the GitHub release, on every version tag (v1.2.3).
+name: Release installer
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Dependencies
+        run: python -m pip install -r requirements.txt pyinstaller
+      - name: Tests
+        run: python -m pytest -q tests
+        env: { PYTHONUTF8: '1' }
+      - name: Bundle (PyInstaller)
+        run: python -m PyInstaller packaging/lorekeeper.spec --noconfirm --log-level WARN
+      - name: Self-test the bundle
+        shell: pwsh
+        run: |
+          $p = Start-Process dist\Lorekeeper\Lorekeeper.exe -ArgumentList '--selftest','--ci' -PassThru -Wait
+          Get-Content "$env:APPDATA\Lorekeeper\app.log"
+          if ($p.ExitCode -ne 0) { throw "self-test failed" }
+      - name: Installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $v = '${{ github.ref_name }}'.TrimStart('v'); if ($v -notmatch '^\d') { $v = '0.0.0-dev' }
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) { choco install innosetup -y --no-progress }
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source; if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc /Q "/DAppVersion=$v" packaging\lorekeeper.iss
+          Copy-Item "dist\Lorekeeper-Setup-$v.exe" dist\Lorekeeper-Setup.exe   # a fixed name: releases/latest/download/Lorekeeper-Setup.exe
+          Get-ChildItem dist\*.exe
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/Lorekeeper-Setup-*.exe
+            dist/Lorekeeper-Setup.exe
+      - name: Keep the build (manual runs)
+        if: "!startsWith(github.ref, 'refs/tags/v')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lorekeeper-Setup
+          path: dist/Lorekeeper-Setup-*.exe
