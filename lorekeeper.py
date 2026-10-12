@@ -19,7 +19,7 @@ if sys.platform == 'win32':
         except (AttributeError, ValueError):
             pass
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import brain, commands, config, games, lookup, notes, voice  # noqa: E402
+import brain, commands, config, games, listen, lookup, notes, voice  # noqa: E402
 
 LOG = os.path.join(config.DIR, 'log.jsonl')
 TURN_SECS = 600
@@ -40,7 +40,10 @@ class App:
         self.screen = capture.Screen(active=lambda: bool(self.game))
         self.game, self.gen, self.frames = None, 0, []
         self.turns, self.last, self.last_q, self.spoil_next = [], '', '', False
-        self.down_at = 0
+        self.down_at, self._spoke_at, self.hk = 0, 0, None
+        self.listener = listen.Listener(self.ears, self.heard, self.listen_muted, cfg['followUpSeconds'], self.woke, self.hint)
+        if cfg['listen']:
+            self.set_listen(True, quiet=True)
         self._games, self._pin = games.index(), games.pinned()   # in memory: the hook asks in_game() on every press
         threading.Thread(target=self._watch_game, daemon=True).start()
 
@@ -72,6 +75,54 @@ class App:
         self.voice.say(answer)
         if self.box:
             self.box.show(question, answer)
+        if self.listener.on:
+            self.after_speaking()
+
+    def hint(self):
+        return ', '.join(([self.game['name']] if self.game else []) + notes.names(self.game))
+
+    def after_speaking(self):
+        """Once the answer has been said, a follow-up needs no wake word for a few seconds."""
+        def wait():
+            time.sleep(0.3)
+            while self.voice.busy():
+                time.sleep(0.1)
+            self.listener.follow_up()
+        threading.Thread(target=wait, daemon=True).start()
+
+    # listen mode
+    def set_listen(self, on, quiet=False):
+        try:
+            self.listener.start() if on else self.listener.stop()
+        except Exception as e:
+            return self.say('', f"Can't hear the mic: {e}")
+        self.cfg['listen'] = on
+        config.save(self.cfg)
+        if not quiet:
+            self.say('Listen mode', 'Listening. Say Lorekeeper, then your question.' if on else 'Stopped listening.')
+
+    def toggle_listen(self):
+        self.set_listen(not self.listener.on)
+
+    def listen_muted(self):
+        """Skip the mic: it would hear Lorekeeper's own voice, the hotkey is in use, or no game is in front."""
+        now = time.time()
+        if self.voice.busy():
+            self._spoke_at = now
+            return True
+        return now - self._spoke_at < 0.5 or bool(self.hk and self.hk.held) or not self.in_game()
+
+    def woke(self):
+        self.voice.say('Yes?')
+        if self.box:
+            self.box.show('👂 Listening…', '', stay=True)
+
+    def heard(self, q):
+        self.gen += 1
+        g, _ = games.current()
+        self.game = g or self.game
+        self.frames = self.screen.now() if self.cfg['screen'] else []
+        self.handle(q, self.gen)
 
     # hotkey
     def down(self):
@@ -101,8 +152,7 @@ class App:
         if time.time() - self.down_at < 0.35:   # a tap: that just stopped the voice
             self.warm.drop()
             return self.box and self.box.hide()
-        hint = ', '.join(([self.game['name']] if self.game else []) + notes.names(self.game))
-        q = self.ears.text(audio, hint)
+        q = self.ears.text(audio, self.hint())
         if gen != self.gen:
             return
         if not q:
@@ -124,6 +174,8 @@ class App:
         if action == 'stop':
             self.voice.stop()
             return self.box and self.box.hide()
+        if action in ('listen_on', 'listen_off'):
+            return self.set_listen(action == 'listen_on')
         if action == 'repeat':
             return self.say(q, self.last or 'Nothing to repeat yet.')
         if action == 'clip':
@@ -202,6 +254,8 @@ class App:
         self.voice.say(' '.join(rest))
         if self.box:
             self.box.show(q, a)
+        if self.listener.on:
+            self.after_speaking()
         self.last, self.last_q = a, q
         self.turns.append({'t': time.time(), 'q': q, 'a': a})
         log({'game': self.game and self.game['name'], 'q': q, 'a': a, 'usd': round(usd, 5), 'secs': round(time.time() - started, 1),
@@ -256,10 +310,22 @@ def tray(app, box):
             box.show('Hotkey', f"Hold {hotkey.pretty(app.hk.combo)} and ask." if combo else 'Unchanged.')
         app.hk.record(done)
 
+    def set_listen_key(*_):
+        box.show('Set the listen key', 'Press the key or combo that turns listen mode on and off. Esc to cancel.', stay=True)
+
+        def done(combo):
+            if combo:
+                app.cfg['listenKey'] = combo
+                config.save(app.cfg)
+            box.show('Listen key', f"{hotkey.pretty(app.lk.combo)} turns listen mode on and off." if combo else 'Unchanged.')
+        app.lk.record(done)
+
     menu = pystray.Menu(
         pystray.MenuItem(lambda _: f"Playing: {app.game['name'] if app.game else 'nothing detected'}", None, enabled=False),
         pystray.MenuItem('Pick the game', pystray.Menu(pick_list)),
         pystray.MenuItem(lambda _: f'Hotkey: {hotkey.pretty(app.hk.combo)}  (change…)', set_hotkey),
+        pystray.MenuItem('Listen mode (say "Lorekeeper, …")', lambda *_: app.toggle_listen(), checked=lambda _: app.listener.on),
+        pystray.MenuItem(lambda _: f'Listen key: {hotkey.pretty(app.lk.combo)}  (change…)', set_listen_key),
         pystray.MenuItem('Hotkey works outside games too', flip('hotkeyEverywhere'), checked=lambda _: app.cfg['hotkeyEverywhere']),
         pystray.MenuItem('Spoilers', flip('spoilers'), checked=lambda _: app.cfg['spoilers']),
         pystray.MenuItem('Show answers in a box', flip('box'), checked=lambda _: app.cfg['box']),
@@ -307,6 +373,12 @@ def main():
         hk = hotkey.Hotkey(config.DEFAULTS['hotkey'], app.down, app.up, app.cancel, app.in_game)
     app.hk = hk
     threading.Thread(target=hk.run, daemon=True).start()
+    try:
+        lk = hotkey.Hotkey(cfg['listenKey'], app.toggle_listen, lambda: None)
+    except ValueError:
+        lk = hotkey.Hotkey(config.DEFAULTS['listenKey'], app.toggle_listen, lambda: None)
+    app.lk = lk
+    threading.Thread(target=lk.run, daemon=True).start()
     tray(app, b)
     b.show('Lorekeeper is ready', f"Hold {hotkey.pretty(hk.combo)} in a game and ask." + (f" Playing {app.game['name']}." if app.game else ''))
     b.run()

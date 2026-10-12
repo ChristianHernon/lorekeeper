@@ -12,6 +12,11 @@ Hold **Ctrl+Alt+Space** in a game (or any key or mouse side button you set), ask
 | Elden Ring | *"Spoil it."* | The last question again, with nothing held back. |
 | Any game | *"Clip it."* | Presses your clip key (Steam Game Recording or Game Bar). |
 
+## Listen mode
+Rather not hold a key? Press **Ctrl+Alt+L** (or tray → **Listen mode**, or say *"start listening"*). Then start a question with **"Lorekeeper, …"**. For 8 seconds after an answer, ask a follow-up without the name. Say just *"Lorekeeper"* and it answers "Yes?" and waits for the question.
+
+The mic stays open, but Whisper only runs when someone's talking, so it's close to free while you're quiet. It ignores everything while Lorekeeper is speaking (so it doesn't hear itself through speakers), while you hold the hotkey, and when no game is in front. Chatting with friends is ignored unless you say the name. Press Ctrl+Alt+L again or say *"stop listening"* to turn it off.
+
 ## How it works
 - **Ears:** Whisper (faster-whisper) runs on your PC, so audio never leaves it. It's hinted with the game's name and the names in your notes, so it spells "Malenia" right.
 - **Game:** the exe of the window in front, matched against the games Steam, Epic and GOG installed. For an emulator, or if it guesses wrong, say *"I'm playing Chrono Trigger"* or pick from the tray menu.
@@ -35,7 +40,9 @@ Tray → **Settings file** (`%APPDATA%\Lorekeeper\config.json`):
 |---|---|---|
 | `hotkey` | `ctrl+alt+space` | hold to talk; set it from the tray (any key, combo, or `mouse4`/`mouse5`) |
 | `hotkeyEverywhere` | `false` | off: the hotkey only works while a game is in front, so Atticus can share Ctrl+Alt+Space |
-| `clipKeys` | *(empty)* | key "clip it" presses, e.g. your Steam Game Recording clip key, or `win+alt+g` (Game Bar) |
+| `clipKeys` | `ctrl+f10` | key "clip it" presses. In Steam → Settings → Game Recording, set **"Save the last 30 seconds"** to Ctrl+F10. Or use `win+alt+g` for Game Bar |
+| `listen` / `listenKey` | `false` / `ctrl+alt+l` | listen mode and its on/off key |
+| `followUpSeconds` | `8` | how long after an answer a follow-up needs no "Lorekeeper" |
 | `model` / `deepModel` | `haiku` / `sonnet` | |
 | `whisper` | `base.en` | `small.en` hears names better, but is slower on CPU |
 | `whisperDevice` | `cpu` | `cuda` with an NVIDIA GPU and the CUDA libraries |

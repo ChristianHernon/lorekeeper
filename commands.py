@@ -5,6 +5,8 @@ RULES = [
     ('stop', r'(?:stop|shush|quiet|be quiet|shut up|never ?mind|cancel)'),
     ('repeat', r'(?:repeat(?: that)?|say (?:that|it) again|what did you say|come again)'),
     ('clip', r'(?:clip (?:it|that|this)|save (?:a |that |the )?clip|(?:make|take) a clip|clip the last .+)'),
+    ('listen_on', r'(?:listen mode on|(?:start|keep) listening|listen to me|turn on listen(?:ing| mode))'),
+    ('listen_off', r'(?:listen mode off|stop listening|turn off listen(?:ing| mode)|go to sleep)'),
     ('spoil', r'(?:(?:ok(?:ay)?,? )?spoil (?:it|that|away)(?: for me)?|spoilers? on|go ahead and spoil(?: it)?)'),
     ('playing', r"(?:i'?m|i am|we'?re) (?:now )?playing (.+)"),
     ('auto', r'(?:detect (?:the )?game|auto(?:matic)?(?: detect)?|forget (?:the|which) game)'),
