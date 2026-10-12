@@ -346,6 +346,17 @@ footer p { margin: 0; }
 
 /* Easter egg: Ctrl+Alt+Space (or clicking the hint) unlocks the demo */
 .soon { color: #ffd23f; }
+/* the secret's raptor: runs under the videos, turns at the edges, two-frame legs */
+.raptor-track { position: relative; height: 64px; margin-top: 12px; overflow: hidden; border-bottom: 4px solid var(--indigo); }
+.raptor { position: absolute; bottom: 0; left: 0; width: 80px; height: 56px; animation: raptor-run 9s linear infinite; }
+.raptor img { position: absolute; inset: 0; width: 80px; height: 56px; image-rendering: pixelated; }
+.raptor .rb { animation: raptor-legs .32s steps(1) infinite; }
+@keyframes raptor-legs { 0% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes raptor-run {
+  0% { left: -90px; transform: scaleX(1); } 49.9% { left: calc(100% + 10px); transform: scaleX(1); }
+  50% { left: calc(100% + 10px); transform: scaleX(-1); } 99.9% { left: -90px; transform: scaleX(-1); } 100% { left: -90px; transform: scaleX(1); } }
+.egg.plain .raptor-track { display: none; }
+@media (prefers-reduced-motion: reduce) { .raptor { animation: none; left: calc(50% - 40px); } .raptor .rb { animation: none; opacity: 0; } }
 .btn.dl { font-size: 14px; padding: 18px 22px; margin-bottom: 12px; }
 .src { margin-top: 18px; color: var(--ink-dim); }
 .src summary { cursor: pointer; font-family: var(--pixel); font-size: 1.3rem; color: var(--sky); margin-bottom: 12px; }
@@ -612,6 +623,9 @@ footer p { margin: 0; }
       </div>
     </div>
     <p class="egg-more"><a href="demo-full.mp4">Watch the full demo (1:25)</a></p>
+    <div class="raptor-track" aria-hidden="true">
+      <div class="raptor"><img class="ra" src="img/raptor-a.svg" alt="" width="80" height="56"><img class="rb" src="img/raptor-b.svg" alt="" width="80" height="56"></div>
+    </div>
   </div>
 </div>
 <script>
