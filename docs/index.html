@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lorekeeper</title>
+<meta name="description" content="Lorekeeper is a Windows voice companion for video games. Hold a key, ask out loud, hear the answer: it knows which game you're in, reads that game's wiki, and answers in your ear without spoilers.">
+<meta property="og:title" content="Lorekeeper">
+<meta property="og:description" content="Hold a key. Ask out loud. Hear the answer. A spoiler-safe voice companion for PC games.">
+<meta name="theme-color" content="#0b0b2b">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --night: #0b0b2b;
+  --night-2: #12123d;
+  --indigo: #3b1f6e;
+  --purple: #7a3cff;
+  --purple-text: #b99bff;
+  --blue: #2f6bff;
+  --sky: #49c6ff;
+  --crimson: #e0284f;
+  --crimson-dark: #8a1636;
+  --ink: #f2efe6;
+  --ink-dim: #c8c4d8;
+  --shadow: #05051a;
+  --px: 4px;
+  --heading: "Press Start 2P", "Courier New", monospace;
+  --pixel: "VT323", "Consolas", "Courier New", monospace;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background-color: var(--night);
+  background-image:
+    radial-gradient(ellipse at 50% -10%, rgba(122,60,255,.35), transparent 60%),
+    linear-gradient(180deg, var(--night) 0%, #10103a 55%, #1a1050 100%);
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.125rem;
+  line-height: 1.65;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; }
+a { color: var(--sky); text-underline-offset: 3px; }
+a:hover { color: var(--ink); }
+:focus-visible {
+  outline: 3px solid #ffd23f;
+  outline-offset: 4px;
+}
+.skip {
+  position: absolute; left: 8px; top: -60px; z-index: 100;
+  background: var(--ink); color: var(--night); padding: 8px 12px;
+  font-family: var(--heading); font-size: 12px;
+}
+.skip:focus { top: 8px; }
+
+/* Pixel starfield (two layers of 1px "stars" scaled up) */
+.stars, .stars::after {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+}
+.stars::before, .stars::after {
+  content: ""; position: absolute; width: 3px; height: 3px; background: transparent;
+  box-shadow:
+    5vw 8vh #f2efe6, 14vw 22vh #49c6ff, 23vw 5vh #f2efe6, 31vw 31vh #b99bff, 38vw 12vh #f2efe6,
+    47vw 26vh #49c6ff, 56vw 6vh #f2efe6, 63vw 18vh #b99bff, 71vw 9vh #f2efe6, 79vw 28vh #49c6ff,
+    88vw 14vh #f2efe6, 95vw 4vh #b99bff, 9vw 44vh #f2efe6, 19vw 58vh #49c6ff, 28vw 71vh #f2efe6,
+    42vw 49vh #b99bff, 52vw 64vh #f2efe6, 61vw 41vh #49c6ff, 74vw 55vh #f2efe6, 84vw 67vh #b99bff,
+    93vw 46vh #f2efe6, 7vw 86vh #49c6ff, 17vw 93vh #f2efe6, 35vw 82vh #b99bff, 46vw 95vh #f2efe6,
+    58vw 88vh #49c6ff, 69vw 79vh #f2efe6, 81vw 91vh #b99bff, 91vw 83vh #f2efe6;
+  opacity: .55;
+}
+.stars::after {
+  transform: translate(2.5vw, 3vh);
+  width: 2px; height: 2px; opacity: .35;
+  animation: twinkle 4s steps(2) infinite;
+}
+@keyframes twinkle { 50% { opacity: .1; } }
+
+/* CRT scanlines */
+.crt {
+  position: fixed; inset: 0; pointer-events: none; z-index: 50;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+html.no-crt .crt { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .crt { background: repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px, transparent 1px 4px); }
+  .stars::after { animation: none; }
+}
+
+.wrap { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+/* Pixel box: stepped corners via 4-sided box-shadow ring, chunky offset shadow */
+.px {
+  --bc: var(--ink);
+  --bg: var(--night-2);
+  position: relative;
+  background: var(--bg);
+  margin: var(--px);
+  box-shadow:
+    0 calc(var(--px) * -1) 0 0 var(--bc),
+    0 var(--px) 0 0 var(--bc),
+    calc(var(--px) * -1) 0 0 0 var(--bc),
+    var(--px) 0 0 0 var(--bc),
+    calc(var(--px) * 2) calc(var(--px) * 3) 0 0 var(--shadow),
+    calc(var(--px) * 3) calc(var(--px) * 2) 0 0 var(--shadow);
+}
+
+/* Header */
+.top {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 18px 0; flex-wrap: wrap;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--heading); font-size: 14px; color: var(--ink); text-decoration: none;
+  letter-spacing: 1px;
+}
+.brand img { width: 32px; height: 32px; image-rendering: pixelated; }
+.top nav { display: flex; gap: 6px 18px; flex-wrap: wrap; align-items: center; }
+.top nav a {
+  font-family: var(--pixel); font-size: 1.5rem; line-height: 1; color: var(--ink-dim); text-decoration: none;
+  padding: 4px 2px;
+}
+.top nav a:hover { color: var(--sky); }
+.toggle {
+  font-family: var(--pixel); font-size: 1.25rem; line-height: 1;
+  background: transparent; color: var(--ink-dim); border: 2px solid var(--ink-dim);
+  padding: 4px 8px; cursor: pointer;
+}
+.toggle:hover { color: var(--ink); border-color: var(--ink); }
+.toggle[aria-pressed="true"] { color: var(--night); background: var(--sky); border-color: var(--sky); }
+
+/* Hero */
+.hero {
+  display: grid; grid-template-columns: 1.25fr 1fr; gap: 40px; align-items: center;
+  padding: 48px 0 72px;
+}
+.kicker {
+  font-family: var(--pixel); font-size: 1.5rem; color: var(--sky); margin: 0 0 12px; line-height: 1.2;
+}
+h1, h2, h3 { font-family: var(--heading); font-weight: 400; line-height: 1.45; }
+h1 {
+  font-size: clamp(1.25rem, 3.6vw, 2.1rem); margin: 0 0 24px;
+  color: var(--ink);
+  text-shadow: 4px 4px 0 var(--crimson-dark), 8px 8px 0 var(--shadow);
+}
+h1 span { display: block; }
+h1 .c2 { color: var(--sky); }
+h1 .c3 { color: #ff8aa4; }
+.lede { font-size: 1.25rem; color: var(--ink-dim); max-width: 34em; margin: 0 0 32px; }
+.lede strong { color: var(--ink); font-weight: 600; }
+.ctas { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+.btn {
+  --bc: var(--ink);
+  display: inline-block; text-decoration: none;
+  font-family: var(--heading); font-size: 12px; line-height: 1.5; letter-spacing: .5px;
+  padding: 14px 18px; color: var(--ink);
+  transition: transform .08s steps(1);
+}
+.btn.primary { --bg: var(--crimson); --bc: var(--ink); color: #fff; }
+.btn.secondary { --bg: var(--indigo); --bc: var(--purple-text); }
+.btn:hover { transform: translate(-2px, -2px); color: #fff; }
+.btn:active { transform: translate(4px, 4px); }
+
+.stage { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.mascot {
+  width: min(320px, 70vw); height: auto; image-rendering: pixelated;
+  animation: bob 1.6s steps(2) infinite;
+  filter: drop-shadow(8px 8px 0 var(--shadow));
+}
+@keyframes bob { 50% { transform: translateY(-8px); } }
+.press {
+  font-family: var(--heading); font-size: 12px; color: var(--ink); text-align: center; margin: 0;
+  letter-spacing: 1px;
+}
+.press .k { color: #ffd23f; }
+.blink { animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .mascot, .blink { animation: none; }
+}
+
+/* Sections */
+section.wrap { padding-top: 56px; padding-bottom: 56px; }
+.sec-title {
+  display: flex; align-items: center; gap: 14px; margin: 0 0 32px;
+  font-size: clamp(1rem, 2.6vw, 1.4rem); color: var(--ink);
+}
+.sec-title::before {
+  content: ""; flex: none; width: 16px; height: 16px; background: var(--crimson);
+  box-shadow: 4px 4px 0 var(--shadow);
+}
+.sec-sub { color: var(--ink-dim); margin: -16px 0 32px; max-width: 46em; }
+
+/* Steps */
+.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; counter-reset: step; }
+.steps li { --bc: var(--blue); --bg: #101040; padding: 22px 20px 24px; counter-increment: step; }
+.steps li::before {
+  content: "0" counter(step);
+  position: absolute; top: -18px; right: 14px;
+  font-family: var(--heading); font-size: 12px; background: var(--blue); color: #fff; padding: 6px 8px;
+}
+.steps img { width: 48px; height: 48px; image-rendering: pixelated; display: block; margin-bottom: 14px; }
+.steps h3 { font-size: 12px; margin: 0 0 12px; color: var(--sky); }
+.steps p { margin: 0; font-size: 1rem; color: var(--ink-dim); }
+.steps p strong { color: var(--ink); font-weight: 600; }
+kbd {
+  font-family: var(--pixel); font-size: 1.15em; line-height: 1;
+  background: var(--ink); color: var(--night); padding: 1px 6px; box-shadow: 0 3px 0 #8f8aa6;
+  white-space: nowrap;
+}
+
+/* Dialogue box */
+.dialog { --bc: var(--ink); --bg: #08082a; padding: 10px 0; }
+.dialog-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 22px 14px; border-bottom: 4px solid var(--indigo);
+  font-family: var(--pixel); font-size: 1.35rem; color: var(--purple-text); line-height: 1.2;
+}
+.dialog table { width: 100%; border-collapse: collapse; }
+.dialog caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.dialog th[scope="col"] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.dialog tr + tr td, .dialog tr + tr th { border-top: 2px dashed rgba(185,155,255,.25); }
+.dialog th[scope="row"], .dialog td { padding: 16px 22px; vertical-align: top; text-align: left; }
+.dialog .game { display: block; font-family: "VT323", monospace; font-size: 1.05rem; font-weight: normal; letter-spacing: .04em; color: #49c6ff; text-transform: uppercase; margin-bottom: 4px; }
+.dialog th[scope="row"] {
+  width: 42%;
+  font-family: var(--pixel); font-weight: 400; font-size: 1.6rem; line-height: 1.2; color: var(--ink);
+}
+.dialog th[scope="row"]::before { content: "YOU \25B8  "; color: #ff8aa4; font-size: .8em; }
+.dialog td { color: var(--ink-dim); font-size: 1.05rem; }
+.dialog td::before {
+  content: "LK \25B8  "; font-family: var(--pixel); font-size: 1.3rem; color: var(--sky);
+}
+.dialog td q { color: var(--ink); }
+.dialog-foot { text-align: right; padding: 4px 22px 4px; font-family: var(--pixel); font-size: 1.4rem; color: #ffd23f; line-height: 1; }
+
+/* Features */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 28px; }
+.feat { --bc: var(--purple); --bg: #1a1046; padding: 22px 20px; }
+.feat h3 { font-size: 12px; color: var(--ink); margin: 0 0 12px; display: flex; gap: 10px; align-items: flex-start; }
+.feat h3::before { content: ""; flex: none; width: 10px; height: 10px; margin-top: 3px; background: var(--sky); box-shadow: 3px 3px 0 var(--shadow); }
+.feat p { margin: 0; font-size: 1rem; color: var(--ink-dim); }
+
+/* Install */
+.install-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 36px; align-items: start; }
+.install-grid > *, .hero > *, .steps > *, .features > * { min-width: 0; }
+.req { --bc: var(--crimson); --bg: #1c0f30; padding: 22px 22px; }
+.req h3 { font-size: 12px; margin: 0 0 14px; color: #ff8aa4; }
+.req ul { list-style: none; margin: 0; padding: 0; }
+.req li { padding-left: 26px; position: relative; margin: 8px 0; }
+.req li::before { content: ""; position: absolute; left: 0; top: .55em; width: 10px; height: 10px; background: var(--crimson); }
+.code { --bc: var(--sky); --bg: #050520; padding: 0; }
+.code-bar {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 10px 14px; background: #10103a; border-bottom: 4px solid var(--blue);
+  font-family: var(--pixel); font-size: 1.3rem; line-height: 1; color: var(--ink-dim);
+}
+.copy {
+  font-family: var(--heading); font-size: 10px; letter-spacing: .5px;
+  background: var(--blue); color: #fff; border: 0; padding: 9px 12px; cursor: pointer;
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+.copy:hover { background: #4a80ff; }
+.copy:active { transform: translate(3px,3px); box-shadow: none; }
+.copy.ok { background: #1d8a5a; }
+pre { margin: 0; padding: 18px 18px 20px; overflow-x: auto; }
+pre code { font-family: var(--mono); font-size: .98rem; color: var(--ink); line-height: 1.8; }
+pre .p { color: var(--purple-text); user-select: none; }
+.after { margin: 18px 4px 0; color: var(--ink-dim); font-size: 1rem; }
+
+/* Final CTA + footer */
+.final { text-align: center; padding: 64px 0 40px; }
+.final h2 { font-size: clamp(1rem, 3vw, 1.5rem); margin: 0 0 14px; text-shadow: 4px 4px 0 var(--shadow); }
+.final p { color: var(--ink-dim); margin: 0 auto 28px; max-width: 32em; }
+footer {
+  position: relative; z-index: 1;
+  border-top: 4px solid var(--indigo);
+  padding: 22px 0 30px; color: var(--ink-dim); font-size: .95rem;
+}
+footer .wrap { display: flex; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; }
+footer p { margin: 0; }
+
+/* Responsive */
+@media (max-width: 920px) {
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .install-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; padding-top: 24px; gap: 28px; }
+  .stage { order: -1; }
+  .mascot { width: min(220px, 60vw); }
+  .dialog table, .dialog tbody, .dialog tr, .dialog th[scope="row"], .dialog td { display: block; width: auto; }
+  .dialog th[scope="row"] { padding-bottom: 4px; }
+  .dialog td { padding-top: 4px; border-top: 0 !important; }
+}
+@media (max-width: 560px) {
+  body { font-size: 1.0625rem; }
+  .wrap { padding: 0 16px; }
+  .steps { grid-template-columns: 1fr; gap: 34px; }
+  .top nav a { font-size: 1.3rem; }
+  .brand { font-size: 12px; }
+  .press { font-size: 10px; }
+  .btn { font-size: 11px; padding: 12px 14px; }
+  .dialog th[scope="row"], .dialog td { padding-left: 16px; padding-right: 16px; }
+  .dialog-head { padding-left: 16px; padding-right: 16px; }
+  section.wrap { padding-top: 44px; padding-bottom: 44px; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre code { font-size: .9rem; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="stars" aria-hidden="true"></div>
+<div class="crt" aria-hidden="true"></div>
+
+<header class="wrap top">
+  <a class="brand" href="#top" aria-label="Lorekeeper home"><img src="img/favicon.svg" alt="" width="32" height="32">LOREKEEPER</a>
+  <nav aria-label="Main">
+    <a href="#how">How it works</a>
+    <a href="#asks">Asks</a>
+    <a href="#features">Features</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/FindlayHi/lorekeeper">GitHub</a>
+    <button class="toggle" id="crt-toggle" type="button" aria-pressed="true">CRT</button>
+  </nav>
+</header>
+
+<main id="main">
+  <div class="wrap hero" id="top">
+    <div>
+      <p class="kicker">A voice companion for PC games &middot; Windows</p>
+      <h1><span>Hold a key.</span><span class="c2">Ask out loud.</span><span class="c3">Hear the answer.</span></h1>
+      <p class="lede">Lorekeeper <strong>knows which game you're in</strong>, reads that game's wiki, and answers in your ear, <strong>without spoilers</strong>. No alt-tabbing, no scrolling past the ending to find one item.</p>
+      <div class="ctas">
+        <a class="btn px primary" href="#install">&#9654; Install</a>
+        <a class="btn px secondary" href="https://github.com/FindlayHi/lorekeeper">View on GitHub</a>
+      </div>
+    </div>
+    <div class="stage">
+      <img class="mascot" src="img/book.svg" alt="Pixel-art open book, the Lorekeeper mascot" width="320" height="240">
+      <p class="press">PRESS <span class="k blink">CTRL+ALT+SPACE</span></p>
+    </div>
+  </div>
+
+  <section id="how" class="wrap" aria-labelledby="how-title">
+    <h2 class="sec-title" id="how-title">How it works</h2>
+    <ol class="steps">
+      <li class="px">
+        <img src="img/mic.svg" alt="" width="48" height="48">
+        <h3>Hold &amp; ask</h3>
+        <p>Hold <kbd>Ctrl+Alt+Space</kbd> in any game and ask your question. <strong>Local Whisper</strong> speech-to-text transcribes it, so your audio never leaves your PC.</p>
+      </li>
+      <li class="px">
+        <img src="img/pad.svg" alt="" width="48" height="48">
+        <h3>Game detected</h3>
+        <p>It spots the game from your <strong>Steam, Epic or GOG</strong> installs. Or just say <q>I'm playing X</q>.</p>
+      </li>
+      <li class="px">
+        <img src="img/scroll.svg" alt="" width="48" height="48">
+        <h3>Wiki + Claude</h3>
+        <p>It fetches that game's wiki pages and Claude answers through <strong>Claude Code on your existing Pro/Max plan</strong>. No API key, about 0.1&cent; and 3&ndash;4 seconds per ask.</p>
+      </li>
+      <li class="px">
+        <img src="img/speaker.svg" alt="" width="48" height="48">
+        <h3>Hear it</h3>
+        <p>The answer is <strong>spoken aloud by a natural offline voice</strong> and shown in a small box on your second monitor.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="asks" class="wrap" aria-labelledby="asks-title">
+    <h2 class="sec-title" id="asks-title">Things you can ask</h2>
+    <p class="sec-sub">Talk to it the way you'd ask a friend on the couch who has read the whole wiki and knows not to ruin it.</p>
+    <div class="dialog px">
+      <div class="dialog-head" aria-hidden="true"><span>&#9670; LOREKEEPER</span><span>HOLD CTRL+ALT+SPACE</span></div>
+      <table>
+        <caption>Example questions and what Lorekeeper does</caption>
+        <thead><tr><th scope="col">You ask</th><th scope="col">Lorekeeper answers</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><span class="game">Enter the Gungeon</span>"What does the Gilded Hydra do?"</th><td>Its effect, plus the flavor text: <q>Heads Up!</q></td></tr>
+          <tr><th scope="row"><span class="game">Enter the Gungeon</span>"What synergy did I just get?"</th><td>Reads the pickup banner from the last few seconds of your screen.</td></tr>
+          <tr><th scope="row"><span class="game">Elden Ring</span>"Who is Ranni?"</th><td>The lore, only up to where you are.</td></tr>
+          <tr><th scope="row"><span class="game">Elden Ring</span>"I just beat Margit."</th><td><q>Noted.</q> That sets your spoiler horizon for this game.</td></tr>
+          <tr><th scope="row"><span class="game">Elden Ring</span>"Where do I go next?"</th><td>Just the next step. Nothing past it.</td></tr>
+          <tr><th scope="row"><span class="game">Elden Ring</span>"Spoil it."</th><td>Okay, the full answer.</td></tr>
+          <tr><th scope="row"><span class="game">Any game</span>"Clip it."</th><td>Presses your Steam / Game Bar clip key.</td></tr>
+        </tbody>
+      </table>
+      <div class="dialog-foot" aria-hidden="true"><span class="blink">&#9660;</span></div>
+    </div>
+  </section>
+
+  <section id="features" class="wrap" aria-labelledby="features-title">
+    <h2 class="sec-title" id="features-title">Features</h2>
+    <div class="features">
+      <div class="feat px"><h3>Spoiler-safe notes</h3><p>Progress notes are kept per game, so answers stop where you are.</p></div>
+      <div class="feat px"><h3>Exclusive fullscreen</h3><p>Voice input and DXGI screen capture work without leaving fullscreen.</p></div>
+      <div class="feat px"><h3>5-second memory</h3><p>A rolling screen memory catches banners and pickups that fade before you can ask.</p></div>
+      <div class="feat px"><h3>Pin a game</h3><p>Tray menu to pin the game for emulators or when detection picks the wrong match.</p></div>
+      <div class="feat px"><h3>Free &amp; open source</h3><p>All the code is on <a href="https://github.com/FindlayHi/lorekeeper">GitHub</a>. Read it, fork it, improve it.</p></div>
+    </div>
+  </section>
+
+  <section id="install" class="wrap" aria-labelledby="install-title">
+    <h2 class="sec-title" id="install-title">Install</h2>
+    <div class="install-grid">
+      <div class="req px">
+        <h3>Requirements</h3>
+        <ul>
+          <li>Windows 10 or 11</li>
+          <li>Python 3.10+</li>
+          <li>Claude Code, signed in to a Pro or Max plan</li>
+        </ul>
+      </div>
+      <div>
+        <div class="code px">
+          <div class="code-bar"><span>PowerShell</span><button class="copy" type="button" data-copy="install-cmd" aria-label="Copy install commands">COPY</button></div>
+          <pre><code id="install-cmd"><span class="p" aria-hidden="true">&gt; </span>git clone https://github.com/FindlayHi/lorekeeper
+<span class="p" aria-hidden="true">&gt; </span>cd lorekeeper
+<span class="p" aria-hidden="true">&gt; </span>.\setup.ps1</code></pre>
+        </div>
+        <p class="after">Then start <strong>Lorekeeper</strong> from the Start menu, launch a game, and hold <kbd>Ctrl+Alt+Space</kbd>.</p>
+        <p class="sr-status" id="copy-status" role="status" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap final">
+    <h2>Ready, player one?</h2>
+    <p>Free, open source, and runs on the Claude plan you already have.</p>
+    <a class="btn px primary" href="https://github.com/FindlayHi/lorekeeper">&#9654; Get Lorekeeper</a>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Lorekeeper &middot; <a href="https://github.com/FindlayHi/lorekeeper">github.com/FindlayHi/lorekeeper</a></p>
+    <p>Not affiliated with Anthropic or any game publisher.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('crt-toggle');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var pref = null;
+  try { pref = localStorage.getItem('lk-crt'); } catch (e) {}
+  var on = pref === null ? !reduce : pref === 'on';
+  function apply() {
+    root.classList.toggle('no-crt', !on);
+    btn.setAttribute('aria-pressed', String(on));
+    btn.textContent = on ? 'CRT: ON' : 'CRT: OFF';
+  }
+  apply();
+  btn.addEventListener('click', function () {
+    on = !on; apply();
+    try { localStorage.setItem('lk-crt', on ? 'on' : 'off'); } catch (e) {}
+  });
+
+  var status = document.getElementById('copy-status');
+  document.querySelectorAll('.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var el = document.getElementById(b.getAttribute('data-copy'));
+      var text = Array.prototype.map.call(el.childNodes, function (n) {
+        return (n.nodeType === 1 && n.classList.contains('p')) ? '' : n.textContent;
+      }).join('');
+      function done(ok) {
+        b.textContent = ok ? 'COPIED!' : 'PRESS CTRL+C';
+        b.classList.toggle('ok', ok);
+        status.textContent = ok ? 'Install commands copied to clipboard' : 'Copy failed, select the text and press Ctrl+C';
+        setTimeout(function () { b.textContent = 'COPY'; b.classList.remove('ok'); }, 1800);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      } else {
+        var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+        var ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta); done(ok);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

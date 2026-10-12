@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lorekeeper: hold Ctrl+Alt+G in a game, ask out loud, let go, hear the answer.
+"""Lorekeeper: hold Ctrl+Alt+Space in a game, ask out loud, let go, hear the answer.
 
 It knows which game is in front (Steam, Epic, GOG installs; or pin one from the tray / "I'm playing X"), looks the
 answer up on the game's wiki through `claude -p` on your Claude plan, and reads it aloud. Progress notes per game keep
@@ -41,12 +41,23 @@ class App:
         self.game, self.gen, self.frames = None, 0, []
         self.turns, self.last, self.last_q, self.spoil_next = [], '', '', False
         self.down_at = 0
+        self._games, self._pin = games.index(), games.pinned()   # in memory: the hook asks in_game() on every press
         threading.Thread(target=self._watch_game, daemon=True).start()
+
+    def in_game(self):
+        """Is a game in front right now? No file reads: it runs inside the keyboard hook."""
+        if self.cfg['hotkeyEverywhere']:
+            return True
+        exe, title = games.win.front()
+        if not exe or games.LAUNCHERS.search(exe):
+            return False
+        return bool(self._pin) or bool(games.match(exe, title, self._games))
 
     def _watch_game(self):
         while True:   # cheap: one window call and a list scan; keeps the tray and the screen buffer current
             try:
                 g, exe = games.current()
+                self._games, self._pin = games.index(), games.pinned()
                 if g or not games.LAUNCHERS.search(exe or ''):   # alt-tabbed to a browser or Discord: keep the last game
                     self.game = g
             except Exception as e:
@@ -198,7 +209,7 @@ class App:
 
 
 def tray(app, box):
-    import pystray
+    import hotkey, pystray
     from PIL import Image, ImageDraw
     img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -210,11 +221,12 @@ def tray(app, box):
     def pin_to(g):
         def do(*_):
             games.pin(g)
-            app.game = g
+            app.game, app._pin = g, games.pinned()
         return do
 
     def auto(*_):
         games.unpin()
+        app._pin = None
         app.game, _ = games.current()
 
     def pick_list():
@@ -234,9 +246,21 @@ def tray(app, box):
         app.warm.drop()
         box.quit()
 
+    def set_hotkey(*_):
+        box.show('Set the hotkey', 'Press the key, combo or mouse side button you want. Esc to cancel.', stay=True)
+
+        def done(combo):
+            if combo:
+                app.cfg['hotkey'] = combo
+                config.save(app.cfg)
+            box.show('Hotkey', f"Hold {hotkey.pretty(app.hk.combo)} and ask." if combo else 'Unchanged.')
+        app.hk.record(done)
+
     menu = pystray.Menu(
         pystray.MenuItem(lambda _: f"Playing: {app.game['name'] if app.game else 'nothing detected'}", None, enabled=False),
         pystray.MenuItem('Pick the game', pystray.Menu(pick_list)),
+        pystray.MenuItem(lambda _: f'Hotkey: {hotkey.pretty(app.hk.combo)}  (change…)', set_hotkey),
+        pystray.MenuItem('Hotkey works outside games too', flip('hotkeyEverywhere'), checked=lambda _: app.cfg['hotkeyEverywhere']),
         pystray.MenuItem('Spoilers', flip('spoilers'), checked=lambda _: app.cfg['spoilers']),
         pystray.MenuItem('Show answers in a box', flip('box'), checked=lambda _: app.cfg['box']),
         pystray.MenuItem('Use the screen', flip('screen'), checked=lambda _: app.cfg['screen']),
@@ -277,10 +301,14 @@ def main():
         print('Claude Code (claude) is not on PATH: install it and sign in first.', file=sys.stderr)
     b = boxmod.Box(cfg['boxSeconds'])
     app = App(cfg, b)
-    hk = hotkey.Hotkey(cfg['hotkey'], app.down, app.up, app.cancel)
+    try:
+        hk = hotkey.Hotkey(cfg['hotkey'], app.down, app.up, app.cancel, app.in_game)
+    except ValueError:
+        hk = hotkey.Hotkey(config.DEFAULTS['hotkey'], app.down, app.up, app.cancel, app.in_game)
+    app.hk = hk
     threading.Thread(target=hk.run, daemon=True).start()
     tray(app, b)
-    b.show('Lorekeeper is ready', f"Hold {cfg['hotkey'].upper()} and ask." + (f" Playing {app.game['name']}." if app.game else ''))
+    b.show('Lorekeeper is ready', f"Hold {hotkey.pretty(hk.combo)} in a game and ask." + (f" Playing {app.game['name']}." if app.game else ''))
     b.run()
 
 

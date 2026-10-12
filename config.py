@@ -7,7 +7,8 @@ FILE = os.path.join(DIR, 'config.json')
 MODELS = os.path.join(os.environ.get('LOCALAPPDATA') or DIR, 'Lorekeeper', 'models')   # big files: not roamed
 
 DEFAULTS = {
-    'hotkey': 'ctrl+alt+g',      # hold to talk, let go to ask
+    'hotkey': 'ctrl+alt+space',  # hold to talk, let go to ask; any key or mouse4/mouse5 (tray → Hotkey)
+    'hotkeyEverywhere': False,   # False: only while a game is in front, so Atticus keeps the same combo elsewhere
     'model': 'haiku',            # quick answers; "in detail" asks use deepModel
     'deepModel': 'sonnet',
     'whisper': 'base.en',        # base.en is quick on CPU; small.en hears names better
