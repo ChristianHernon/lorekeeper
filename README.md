@@ -138,7 +138,7 @@ Slots understand the usual words: helmet or head, chest piece, off hand, second 
 <br>
 
 - **Screen:** the last 5 seconds at one frame a second, plus 10 minutes at one frame every 10 seconds, in memory only. "Just", "two minutes ago" and "earlier" choose which frames go with your question.
-- **Icons:** in games whose things show only as icons (Dead by Daylight perks, items and add-ons), Lorekeeper matches them against the game wiki's icons on your PC and names them exactly; AI models can't tell them apart from the art. Which games and icon sets is kept in [`recipes.json`](docs/recipes.json), fetched at startup, so more games arrive without an update.
+- **Icons:** in games whose things show only as icons (Dead by Daylight perks, items, add-ons, status effects, and buffs from teammates' perks), Lorekeeper matches them against the game wiki's icons on your PC and names them exactly; AI models can't tell them apart from the art. Each game's **cartridge** says which wiki, which icon sets, and where on the HUD each one sits, so they read right over any background. Cartridges are kept in [`cartridges.json`](docs/cartridges.json), fetched at startup, so more games arrive without an update.
 - **Saved screens:** *"Remember this as the vault code"* keeps it on disk for that game; *"what was the vault code?"* brings it back.
 - **Notes:** *"I just beat Margit"*, *"I'm in Act 2"* or *"note: I sided with the Emperor"* are saved at once, with no AI. Lasting facts your questions reveal are noted too.
 

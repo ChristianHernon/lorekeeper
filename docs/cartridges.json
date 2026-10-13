@@ -1,0 +1,139 @@
+{
+ "about": "Lorekeeper cartridges: per game, the wiki to take icons from, the shape each icon set sits in on screen, and where on the HUD (regions: a box from a screen corner, in screen heights, and the slot's width). https://github.com/FindlayHi/lorekeeper",
+ "version": 2,
+ "games": {
+  "Dead by Daylight": {
+   "host": "deadbydaylight.wiki.gg",
+   "asks": [
+    "loadout",
+    "build",
+    "status",
+    "effect",
+    "buff",
+    "debuff"
+   ],
+   "sets": [
+    {
+     "kind": "perks",
+     "prefix": "IconPerks_",
+     "shape": "diamond",
+     "regions": [
+      {
+       "anchor": "br",
+       "x": [
+        0.02,
+        0.36
+       ],
+       "y": [
+        0.02,
+        0.32
+       ],
+       "size": 0.083
+      },
+      {
+       "anchor": "br",
+       "x": [
+        0.24,
+        0.6
+       ],
+       "y": [
+        0.02,
+        0.16
+       ],
+       "size": 0.056,
+       "tints": [
+        {
+         "hue": [
+          160,
+          210
+         ],
+         "kind": "perk buffs on you"
+        },
+        {
+         "hue": [
+          345,
+          15
+         ],
+         "kind": "perk debuffs on you"
+        }
+       ]
+      },
+      {
+       "anchor": "tr",
+       "x": [
+        0.08,
+        0.3
+       ],
+       "y": [
+        0.08,
+        0.3
+       ],
+       "size": 0.043,
+       "screen": "lobby"
+      }
+     ]
+    },
+    {
+     "kind": "item",
+     "prefix": "IconItems_",
+     "shape": "square",
+     "regions": [
+      {
+       "anchor": "bl",
+       "x": [
+        0.14,
+        0.245
+       ],
+       "y": [
+        0.04,
+        0.205
+       ],
+       "size": 0.069,
+       "sure": 0.88
+      }
+     ]
+    },
+    {
+     "kind": "add-ons",
+     "prefix": "IconAddon_",
+     "shape": "square",
+     "regions": [
+      {
+       "anchor": "bl",
+       "x": [
+        0.08,
+        0.15
+       ],
+       "y": [
+        0.04,
+        0.205
+       ],
+       "size": 0.031,
+       "sure": 0.91
+      }
+     ],
+     "needs": "item"
+    },
+    {
+     "kind": "status effects",
+     "prefix": "IconStatusEffects_",
+     "shape": "ring",
+     "regions": [
+      {
+       "anchor": "br",
+       "x": [
+        0.02,
+        0.14
+       ],
+       "y": [
+        0.3,
+        0.75
+       ],
+       "size": 0.044
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

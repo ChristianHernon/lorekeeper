@@ -3,7 +3,7 @@ import os, sys, tempfile
 os.environ['LOREKEEPER_DIR'] = tempfile.mkdtemp()
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np  # noqa: E402
-from PIL import Image, ImageDraw  # noqa: E402
+from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
 import json  # noqa: E402
 import icons  # noqa: E402
 
@@ -86,20 +86,57 @@ def test_twin_art_takes_the_page_name():
     assert {p['name'] for p in got} == {'Spool of Wire', 'A 7'}
 
 
-def test_recipes_shipped_match_the_site_and_bad_ones_are_dropped():
+def test_carts_shipped_match_the_site_and_bad_ones_are_dropped():
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    with open(os.path.join(root, 'assets', 'recipes.json'), encoding='utf-8') as f:
+    with open(os.path.join(root, 'assets', 'cartridges.json'), encoding='utf-8') as f:
         shipped = json.load(f)
-    with open(os.path.join(root, 'docs', 'recipes.json'), encoding='utf-8') as f:
+    with open(os.path.join(root, 'docs', 'cartridges.json'), encoding='utf-8') as f:
         assert json.load(f) == shipped   # the site serves what the app ships
     good = icons.valid(shipped)
-    assert [s['kind'] for s in good['dead by daylight']['sets']] == ['perks', 'item', 'add-ons']
+    sets = good['dead by daylight']['sets']
+    assert [s['kind'] for s in sets] == ['perks', 'item', 'add-ons', 'status effects']
+    assert all(s['regions'] for s in sets) and sets[2]['needs'] == 'item'
+    regions = [{'anchor': 'br', 'x': [0.1, 0.3], 'y': [0, 0.2], 'size': 0.08}, {'anchor': 'middle', 'x': [0, 1], 'y': [0, 1], 'size': 0.1},
+               {'anchor': 'tl', 'x': [0.3, 0.1], 'y': [0, 1], 'size': 0.1}, {'anchor': 'tl', 'x': [0, 1], 'y': [0, 1], 'size': 5}, 'x']
+    assert icons._regions(regions) == [dict(regions[0], screen='hud', tints=[], sure=0.8)] and icons._regions('x') == []
     bad = {'games': {'A': {'host': '127.0.0.1', 'sets': [{'kind': 'perks', 'prefix': 'X', 'shape': 'diamond'}]},
                      'B': {'host': 'evil.example.com', 'sets': [{'kind': 'perks', 'prefix': 'X', 'shape': 'diamond'}]},
                      'C': {'host': 'c.wiki.gg', 'sets': [{'kind': 'perks', 'prefix': '../x', 'shape': 'diamond'}, {'kind': 'x', 'prefix': 'Y', 'shape': 'blob'}]},
                      'D': {'host': 'd.fandom.com', 'sets': [{'kind': 'cards', 'prefix': 'Card_', 'shape': 'square'}]}}}
     assert list(icons.valid(bad)) == ['d']
     assert icons.valid('nope') == {} and icons.valid({'games': {'E': None}}) == {}
+
+
+def sand(seed=0):
+    """A sandy screen: bright, coloured, textured everywhere (where slots lose their coloured edge)."""
+    rng = np.random.default_rng(seed)
+    a = np.clip(rng.normal(0, 25, (1440, 2560, 1)) + [170, 135, 90], 0, 255).astype(np.uint8)
+    return Image.fromarray(a).filter(ImageFilter.GaussianBlur(2))
+
+
+def test_hud_regions_read_the_art_over_sand():
+    art = np.stack([icon(s) for s in range(300, 360)])
+    perks = icons.Bank(art[:40], [f'Perk {i}' for i in range(40)], 'diamond', 'perks',
+                       regions=[{'anchor': 'br', 'x': [0.02, 0.36], 'y': [0.02, 0.32], 'size': 0.083}])
+    items = icons.Bank(art[40:50], [f'Item {i}' for i in range(10)], 'square', 'item',
+                       regions=[{'anchor': 'bl', 'x': [0.14, 0.245], 'y': [0.04, 0.205], 'size': 0.069}])
+    addons = icons.Bank(art[50:], [f'Add-on {i}' for i in range(10)], 'square', 'add-ons', needs='item',
+                        regions=[{'anchor': 'bl', 'x': [0.08, 0.15], 'y': [0.04, 0.205], 'size': 0.031}])
+    im = sand()
+    D, c = 119, (2321, 1197)
+    s = 0.73 * D
+    for (cx, cy), a in zip(((c[0], c[1] - s), (c[0] - s, c[1]), (c[0] + s, c[1]), (c[0], c[1] + s)), art[[3, 17, 25, 38]]):
+        side = round(D * 1.2)   # the art only: its diamond's fill is lost in the sand
+        im.paste(Image.new('RGB', (side, side), (240, 240, 240)), (round(cx - side / 2), round(cy - side / 2)), Image.fromarray(a).resize((side, side)))
+    for (cx, cy, d), a in (((287, 1250, 100), art[44]), ((160, 1215, 45), art[52])):
+        side = round(d * 1.1)
+        im.paste(Image.new('RGB', (side, side), (240, 240, 240)), (round(cx - side / 2), round(cy - side / 2)), Image.fromarray(a).resize((side, side)))
+    got = icons.find(im, [perks, items, addons])
+    assert sorted(p['name'] for p in got) == ['Add-on 2', 'Item 4', 'Perk 17', 'Perk 25', 'Perk 3', 'Perk 38']
+    assert icons.find(sand(1), [perks, items, addons]) == []
+    im = sand(2)   # an add-on's art, but no item: a menu's icon
+    im.paste(Image.new('RGB', (50, 50), (240, 240, 240)), (135, 1190), Image.fromarray(art[52]).resize((50, 50)))
+    assert icons.find(im, [perks, items, addons]) == []
 
 
 def test_names_from_wiki_files():
@@ -112,7 +149,7 @@ def test_names_from_wiki_files():
 def test_questions_about_the_icons():
     folder = tempfile.mkdtemp()
     dbd = {'name': 'Dead by Daylight'}
-    assert icons.recipe(dbd, folder) and not icons.recipe({'name': 'Hades'}, folder) and not icons.recipe(None, folder)
+    assert icons.cart(dbd, folder) and not icons.cart({'name': 'Hades'}, folder) and not icons.cart(None, folder)
     for q in ('what perks do I have', 'is my build good', 'what add-on is this', 'which item am I holding', 'what is my loadout'):
         assert icons.asks(q, dbd, folder), q
     assert not icons.asks('where is the exit gate', dbd, folder) and not icons.asks('what perks', {'name': 'Hades'}, folder)

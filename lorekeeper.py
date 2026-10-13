@@ -167,7 +167,7 @@ class App:
         """The screen at key-down, and what its icons show (Dead by Daylight perks...), read while the question is still being said."""
         self.seen = ''
         self.frames = self.screen.now() if self.cfg['screen'] else []
-        if self.frames and icons_too and icons.recipe(self.game, notes.FOLDER):
+        if self.frames and icons_too and icons.cart(self.game, notes.FOLDER):
             try:
                 self.seen = icons.text(self.screen.full, self.game, notes.FOLDER)
             except Exception as e:
