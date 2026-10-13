@@ -40,6 +40,7 @@
 | <sub>ENTER THE GUNGEON</sub> | *"What synergy did I just get?"* | Reads the banner from the last few seconds of your screen, then looks it up. |
 | <sub>BALDUR'S GATE 3</sub> | *"What does the Phalar Aluve do?"* | Sing or Shriek, and what each does, plus the blade's inscription. |
 | <sub>DEAD BY DAYLIGHT</sub> | *"What does Dead Hard do?"* | The perk in plain words, straight from the official wiki. |
+| <sub>DEAD BY DAYLIGHT</sub> | *"What's my loadout?"* | Reads your perks, item and add-ons from their icons, then what each one does. |
 | <sub>ELDEN RING</sub> | *"Who is Ranni?"* | The lore, only up to where you are. |
 | <sub>ELDEN RING</sub> | *"I just beat Margit."* | "Noted." That moves your spoiler line forward. |
 | <sub>ELDEN RING</sub> | *"Where do I go next?"* | The next step. Nothing past it. |
@@ -137,6 +138,7 @@ Slots understand the usual words: helmet or head, chest piece, off hand, second 
 <br>
 
 - **Screen:** the last 5 seconds at one frame a second, plus 10 minutes at one frame every 10 seconds, in memory only. "Just", "two minutes ago" and "earlier" choose which frames go with your question.
+- **Icons:** in games whose things show only as icons (Dead by Daylight perks, items and add-ons), Lorekeeper matches them against the game wiki's icons on your PC and names them exactly; AI models can't tell them apart from the art. Which games and icon sets is kept in [`recipes.json`](docs/recipes.json), fetched at startup, so more games arrive without an update.
 - **Saved screens:** *"Remember this as the vault code"* keeps it on disk for that game; *"what was the vault code?"* brings it back.
 - **Notes:** *"I just beat Margit"*, *"I'm in Act 2"* or *"note: I sided with the Emperor"* are saved at once, with no AI. Lasting facts your questions reveal are noted too.
 
