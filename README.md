@@ -100,6 +100,17 @@ cd lorekeeper
 </details>
 
 <details>
+<summary><b>🎮 Add a game: build a cartridge</b></summary>
+<br>
+
+A game's **cartridge** tells Lorekeeper which wiki to take icons from, which icon sets a player can't name from the art (perks, add-ons, status effects), and where on screen each sits. Carts live in [`assets/cartridges.json`](assets/cartridges.json), and the site serves them to every install, so a new cart needs no app update.
+
+The easy way: clone the repo, open [Claude Code](https://claude.com/claude-code) in it and say *"make a cart for &lt;game&gt;"*. The `lorekeeper-cart` skill (in `.claude/skills/`) checks the wiki, asks you for a few screenshots, measures the HUD, proves the cart on your frames and opens a pull request. The tools it uses are in `tools/cart/` if you'd rather do it by hand: `wiki_probe.py`, `measure.py`, `check.py` and `eval_cart.py`.
+
+Today a cart needs a wiki on wiki.gg or Fandom whose icon files share a name prefix (like `IconPerks_`).
+</details>
+
+<details>
 <summary><b>🕹️ Works with RomM (and any emulator)</b></summary>
 <br>
 
