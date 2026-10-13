@@ -27,7 +27,7 @@ if FROZEN:
     os.makedirs(_logdir, exist_ok=True)
     sys.stdout = sys.stderr = open(os.path.join(_logdir, 'app.log'), 'a', encoding='utf-8', buffering=1)
     print(f"--- {__import__('time').strftime('%Y-%m-%d %H:%M:%S')} Lorekeeper starting", flush=True)
-import brain, capture, commands, config, games, gear, listen, lookup, notes, romm, telemetry, updater, voice  # noqa: E402
+import brain, capture, commands, config, games, gear, listen, lookup, notes, perks, romm, telemetry, updater, voice  # noqa: E402
 
 LOG = os.path.join(config.DIR, 'log.jsonl')
 TURN_SECS = 600
@@ -54,7 +54,7 @@ class App:
         self.ears.mic = cfg['mic']
         self.voice = voice.Voice(cfg['voice'], cfg['edgeVoice'], cfg['rate'], cfg['pitch'], cfg['kokoroVoice'], config.MODELS)
         self.warm = brain.Warm()
-        self.game, self.gen, self.frames = None, 0, []
+        self.game, self.gen, self.frames, self.seen, self.looking = None, 0, [], '', None
         self.screen = capture.Screen(active=lambda: bool(self.game))
         self.turns, self.last, self.last_q, self.spoil_next = [], '', '', False
         self.down_at, self._spoke_at, self.hk = 0, 0, None
@@ -62,6 +62,9 @@ class App:
         if cfg['listen']:
             self.set_listen(True, quiet=True)
         self._games, self._pin = games.index(), games.pinned()   # in memory: the hook asks in_game() on every press
+        for g in self._games:
+            if perks.spec(g):
+                perks.bank(g, notes.FOLDER)   # icons fetched now (once, in the background), not on the first question
         threading.Thread(target=self._watch_game, daemon=True).start()
 
     def in_game(self):
@@ -142,7 +145,7 @@ class App:
         self.gen += 1
         g, _ = games.current()
         self.game = g or self.game
-        self.frames = self.screen.now() if self.cfg['screen'] else []
+        self.look(perks.ASKS.search(q) or capture.wants(q))
         self.handle(q, self.gen)
 
     # hotkey
@@ -158,8 +161,19 @@ class App:
             return self.say('', f"Can't hear the mic: {e}")
         if self.box:
             self.box.show(f"🎧 {self.game['name'] if self.game else 'Listening'}…", '', stay=True)
-        threading.Thread(target=lambda: setattr(self, 'frames', self.screen.now() if self.cfg['screen'] else []), daemon=True).start()
+        self.looking = threading.Thread(target=self.look, daemon=True)
+        self.looking.start()
         threading.Thread(target=self.warm.prime, args=(self.cfg['model'], self.cfg['spoilers']), daemon=True).start()
+
+    def look(self, perks_too=True):
+        """The screen at key-down, and in Dead by Daylight the perks on it, read while the question is still being said."""
+        self.seen = ''
+        self.frames = self.screen.now() if self.cfg['screen'] else []
+        if self.frames and perks_too and perks.spec(self.game):
+            try:
+                self.seen = perks.text(self.screen.full, self.game, notes.FOLDER)
+            except Exception as e:
+                print('perks:', e)
 
     def cancel(self):
         self.ears.stop()
@@ -262,6 +276,9 @@ class App:
         started = time.time()
         spoilers = self.cfg['spoilers'] or self.spoil_next
         self.spoil_next = False
+        if self.looking:
+            self.looking.join(6)   # the key-down look: perks take a second or two
+        seen = self.seen if capture.wants(q) or perks.ASKS.search(q) else ''
         shots = capture.Screen.files(self.frames, q) if self.cfg['screen'] and capture.wants(q) else []
         saved = capture.saved_for(notes.FOLDER, self.game, q)   # on disk for good: never deleted below
         kit = gear.text(self.game) if gear.wants(q) else ''
@@ -271,13 +288,13 @@ class App:
             return self.say(q, 'Claude Code is not installed. Install it and sign in, or pick another AI in the tray, then ask again.')
         if capture.wants(q) and not self.cfg['screen'] and not saved:
             self.voice.say("Use the screen is off in the tray, so I can't look. Going by your words.")
-        elif capture.wants(q) and not shots and not saved:
+        elif capture.wants(q) and not shots and not saved and not seen:
             self.voice.say("I couldn't see the screen, so going by your words.")
         now = time.time()
         self.turns = [t for t in self.turns if now - t['t'] < TURN_SECS][-3:]
         wiki = '' if shots or saved or kit else lookup.wiki(q, self.game and self.game['name'], folder=notes.FOLDER, progress=notes.read(self.game, 3))   # a screenshot names the thing; the model searches then
         wiki = '\n\n'.join(x for x in (romm.context(self.game, q), wiki) if x)   # RomM walkthroughs first: they're the player's own
-        text = brain.request(q, self.game, notes.read(self.game), self.turns, wiki, kit)
+        text = brain.request(q, self.game, notes.read(self.game), self.turns, wiki, kit, seen)
         spoken = []
 
         def streamed(s):   # speak each sentence as it completes; the last, maybe partial, waits
@@ -315,7 +332,8 @@ class App:
         self.last, self.last_q = a, q
         self.turns.append({'t': time.time(), 'q': q, 'a': a})
         log({'game': self.game and self.game['name'], 'q': q, 'a': a, 'usd': round(usd, 5), 'secs': round(time.time() - started, 1),
-             'model': model, 'spoilers': spoilers, 'shots': len(shots), 'saved': len(saved), 'gear': bool(kit), 'learned': learned})
+             'model': model, 'spoilers': spoilers, 'shots': len(shots), 'saved': len(saved), 'gear': bool(kit), 'learned': learned,
+             'perks': seen.split('\n', 1)[0].split(': ', 1)[-1] if seen else ''})
 
 
 def tray(app, box):

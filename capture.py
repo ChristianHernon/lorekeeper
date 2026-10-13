@@ -35,6 +35,7 @@ class Screen:
         self.recent = collections.deque(maxlen=keep)       # (time, jpeg bytes)
         self.long = collections.deque(maxlen=long_keep)
         self.long_every, self.active, self.cam, self.lock = long_every, active, None, threading.Lock()
+        self.full = None   # the key-down grab at full size: perk icons are too small in the 1280 copies
         threading.Thread(target=self._loop, daemon=True).start()
 
     def _grab(self):
@@ -80,6 +81,7 @@ class Screen:
             img = self._grab()
         except Exception:
             img = None
+        self.full = img
         with self.lock:
             out = sorted(set(self.long) | set(self.recent))
         return out + ([(time.time(), jpeg(img))] if img is not None else [])
