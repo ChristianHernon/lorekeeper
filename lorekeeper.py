@@ -27,7 +27,7 @@ if FROZEN:
     os.makedirs(_logdir, exist_ok=True)
     sys.stdout = sys.stderr = open(os.path.join(_logdir, 'app.log'), 'a', encoding='utf-8', buffering=1)
     print(f"--- {__import__('time').strftime('%Y-%m-%d %H:%M:%S')} Lorekeeper starting", flush=True)
-import brain, capture, commands, config, games, gear, listen, lookup, notes, perks, romm, telemetry, updater, voice  # noqa: E402
+import brain, capture, commands, config, games, gear, listen, lookup, notes, icons, romm, telemetry, updater, voice  # noqa: E402
 
 LOG = os.path.join(config.DIR, 'log.jsonl')
 TURN_SECS = 600
@@ -62,9 +62,7 @@ class App:
         if cfg['listen']:
             self.set_listen(True, quiet=True)
         self._games, self._pin = games.index(), games.pinned()   # in memory: the hook asks in_game() on every press
-        for g in self._games:
-            if perks.spec(g):
-                perks.bank(g, notes.FOLDER)   # icons fetched now (once, in the background), not on the first question
+        threading.Thread(target=icons.prefetch, args=(self._games, notes.FOLDER), daemon=True).start()   # not on the first question
         threading.Thread(target=self._watch_game, daemon=True).start()
 
     def in_game(self):
@@ -145,7 +143,7 @@ class App:
         self.gen += 1
         g, _ = games.current()
         self.game = g or self.game
-        self.look(perks.ASKS.search(q) or capture.wants(q))
+        self.look(icons.asks(q, self.game, notes.FOLDER) or capture.wants(q))
         self.handle(q, self.gen)
 
     # hotkey
@@ -165,15 +163,15 @@ class App:
         self.looking.start()
         threading.Thread(target=self.warm.prime, args=(self.cfg['model'], self.cfg['spoilers']), daemon=True).start()
 
-    def look(self, perks_too=True):
-        """The screen at key-down, and in Dead by Daylight the perks on it, read while the question is still being said."""
+    def look(self, icons_too=True):
+        """The screen at key-down, and what its icons show (Dead by Daylight perks...), read while the question is still being said."""
         self.seen = ''
         self.frames = self.screen.now() if self.cfg['screen'] else []
-        if self.frames and perks_too and perks.spec(self.game):
+        if self.frames and icons_too and icons.recipe(self.game, notes.FOLDER):
             try:
-                self.seen = perks.text(self.screen.full, self.game, notes.FOLDER)
+                self.seen = icons.text(self.screen.full, self.game, notes.FOLDER)
             except Exception as e:
-                print('perks:', e)
+                print('icons:', e)
 
     def cancel(self):
         self.ears.stop()
@@ -277,8 +275,8 @@ class App:
         spoilers = self.cfg['spoilers'] or self.spoil_next
         self.spoil_next = False
         if self.looking:
-            self.looking.join(6)   # the key-down look: perks take a second or two
-        seen = self.seen if capture.wants(q) or perks.ASKS.search(q) else ''
+            self.looking.join(8)   # the key-down look: icons take a couple of seconds
+        seen = self.seen if capture.wants(q) or icons.asks(q, self.game, notes.FOLDER) else ''
         shots = capture.Screen.files(self.frames, q) if self.cfg['screen'] and capture.wants(q) else []
         saved = capture.saved_for(notes.FOLDER, self.game, q)   # on disk for good: never deleted below
         kit = gear.text(self.game) if gear.wants(q) else ''
@@ -333,7 +331,7 @@ class App:
         self.turns.append({'t': time.time(), 'q': q, 'a': a})
         log({'game': self.game and self.game['name'], 'q': q, 'a': a, 'usd': round(usd, 5), 'secs': round(time.time() - started, 1),
              'model': model, 'spoilers': spoilers, 'shots': len(shots), 'saved': len(saved), 'gear': bool(kit), 'learned': learned,
-             'perks': seen.split('\n', 1)[0].split(': ', 1)[-1] if seen else ''})
+             'icons': seen.split('\n', 1)[0].split(': ', 1)[-1] if seen else ''})
 
 
 def tray(app, box):
