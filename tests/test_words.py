@@ -9,6 +9,10 @@ def test_commands():
     p = commands.parse
     assert p('Clip it.') == ('clip', '')
     assert p('Lorekeeper, clip that!') == ('clip', '')
+    for said in ('Hey, can you clip it?', 'Okay Lorekeeper, clip that please.', 'Could you please clip it for me?', 'Um, clip it now.'):
+        assert p(said) == ('clip', ''), said
+    assert p('Hey, can you stop?') == ('stop', '') and p('Can you repeat that?') == ('repeat', '')
+    assert p('Can you tell me what this does?') is None
     assert p('Okay, spoil it.') == ('spoil', '')
     assert p("I'm playing Enter the Gungeon") == ('playing', 'Enter the Gungeon')
     assert p('I just beat Margit.') == ('note', 'I just beat Margit')

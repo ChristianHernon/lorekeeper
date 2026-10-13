@@ -23,8 +23,15 @@ RULES = [
 NOT_PROGRESS = re.compile(r'\b(what|where|how|who|why|which|should|does|is it|can i)\b', re.I)
 
 
+LEAD = re.compile(r"^(?:(?:hey|hi|ok(?:ay)?|yo|um+|uh+|so|and|lorekeeper|keeper|please|"
+                  r"(?:can|could|would|will) you(?: please)?|i want you to|go ahead and)[,:]?\s+)+", re.I)
+TAIL = re.compile(r'(?:[,\s]+(?:please|for me|now|real quick|thanks|thank you|lorekeeper))+$', re.I)
+
+
 def clean(text):
-    return re.sub(r'\s+', ' ', re.sub(r'^(?:hey |ok(?:ay)? )?(?:lorekeeper|keeper)[,:]? ', '', text.strip(), flags=re.I)).strip(' .!?')
+    """What's said, without the asking around it: "Hey, can you clip it please?" -> "clip it"."""
+    t = re.sub(r'\s+', ' ', text.strip()).strip(' .!?')
+    return TAIL.sub('', LEAD.sub('', t)).strip(' ,.!?')
 
 
 def parse(text):
