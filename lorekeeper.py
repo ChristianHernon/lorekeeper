@@ -269,7 +269,9 @@ class App:
         p = self.warm.take(model, spoilers)
         if not p:
             return self.say(q, 'Claude Code is not installed. Install it and sign in, or pick another AI in the tray, then ask again.')
-        if capture.wants(q) and self.cfg['screen'] and not shots and not saved:
+        if capture.wants(q) and not self.cfg['screen'] and not saved:
+            self.voice.say("Use the screen is off in the tray, so I can't look. Going by your words.")
+        elif capture.wants(q) and not shots and not saved:
             self.voice.say("I couldn't see the screen, so going by your words.")
         now = time.time()
         self.turns = [t for t in self.turns if now - t['t'] < TURN_SECS][-3:]

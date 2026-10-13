@@ -24,6 +24,8 @@ def test_screen_words():
     assert capture.wants('what synergy did I just get')
     assert capture.wants('what does this item do')
     assert not capture.wants('what does the Shadow Bullets synergy do')
+    assert capture.wants('What perks do I have equipped right now?') and capture.wants('show my loadout')
+    assert not capture.wants('what does dead hard do')
     assert capture.JUST.search('what synergy did I just get')
 
 

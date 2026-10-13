@@ -8,7 +8,7 @@ import collections, io, os, re, tempfile, threading, time
 
 WANTS = re.compile(r"\b(this|that|these|those|here|on (?:my |the )?screen|just (?:got|get|picked|pick(?:ed)? up|found|find|unlocked|unlock|looted|triggered|activated|equipped)|"
                    r"i'?m (?:looking at|holding|fighting|hovering)|what am i|earlier|before|ago|a while back|back there|previous(?:ly)?|"
-                   r"(?:i )?saved|remembered)\b", re.I)
+                   r"(?:i )?saved|remembered|right now|(?:have|got) equipped|equipped right now|do i have|my (?:perks?|loadout|build|inventory|items?|stats|skills?|hand))\b", re.I)
 JUST = re.compile(r'\bjust\b|\ba (?:second|moment|sec) ago\b|\bthat (?:popped|came) up\b', re.I)
 NUM = {'a': 1, 'an': 1, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
        'few': 3, 'couple': 2, 'couple of': 2}
